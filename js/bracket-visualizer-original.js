@@ -1,6 +1,6 @@
-console.log('VISUALIZADOR DE BRACKET CARGADO');
+console.log('🎨 VISUALIZADOR DE BRACKET CARGADO');
 
-// ===== VISUALIZADOR DEL BRACKET DE DOBLE ELIMINACION =====
+// ===== VISUALIZADOR DEL BRACKET DE DOBLE ELIMINACIÓN =====
 
 class BracketVisualizer {
     constructor(containerId) {
@@ -282,7 +282,7 @@ class BracketVisualizer {
     renderTournamentStatus(status) {
         return `
             <div class="bracket-section">
-                <div class="bracket-title">Estado del Torneo</div>
+                <div class="bracket-title">📊 Estado del Torneo</div>
                 <div style="display: flex; justify-content: space-around; align-items: center; flex-wrap: wrap; gap: 1rem;">
                     <div style="text-align: center;">
                         <div style="color: var(--accent-color); font-size: 18px; font-weight: bold;">${status.completedMatches}/${status.totalMatches}</div>
@@ -299,7 +299,7 @@ class BracketVisualizer {
                 </div>
                 ${status.nextMatch ? `
                     <div style="margin-top: 1rem; padding: 0.8rem; background: var(--bg-dark); border-radius: var(--border-radius); text-align: center;">
-                        <div style="color: var(--accent-color); font-size: 10px; margin-bottom: 0.3rem;">PROXIMA PARTIDA</div>
+                        <div style="color: var(--accent-color); font-size: 10px; margin-bottom: 0.3rem;">🎯 PRÓXIMA PARTIDA</div>
                         <div style="font-size: 9px;">
                             <strong>${status.nextMatch.team1?.name || 'TBD'}</strong> vs <strong>${status.nextMatch.team2?.name || 'TBD'}</strong>
                         </div>
@@ -320,7 +320,7 @@ class BracketVisualizer {
         
         return `
             <div class="bracket-section">
-                <div class="bracket-title">Winners Bracket</div>
+                <div class="bracket-title">🏆 Winners Bracket</div>
                 <div class="bracket-rounds">
                     ${winnersBracket.map((round, roundIndex) => `
                         <div class="bracket-round">
@@ -341,7 +341,7 @@ class BracketVisualizer {
         
         return `
             <div class="bracket-section">
-                <div class="bracket-title">Losers Bracket</div>
+                <div class="bracket-title">💀 Losers Bracket</div>
                 <div class="bracket-rounds">
                     ${losersBracket.map((round, roundIndex) => `
                         <div class="bracket-round">
@@ -362,7 +362,7 @@ class BracketVisualizer {
         
         return `
             <div class="bracket-section grand-finals">
-                <div class="bracket-title">Grand Finals</div>
+                <div class="bracket-title">👑 Grand Finals</div>
                 <div class="bracket-rounds">
                     <div class="bracket-round">
                         <div class="round-title">Grand Finals</div>
@@ -412,7 +412,7 @@ class BracketVisualizer {
                 
                 ${match.completed ? `
                     <div style="text-align: center; margin-top: 0.5rem; font-size: 8px; color: var(--success-color);">
-                        Completado
+                        ✅ Completado
                     </div>
                 ` : ''}
             </div>
@@ -443,7 +443,7 @@ class BracketVisualizer {
         `;
     }
     
-    // Verificar si una partida esta disponible para jugar
+    // Verificar si una partida está disponible para jugar
     isMatchAvailable(match) {
         if (match.completed || !match.team1 || !match.team2) {
             return false;
@@ -461,7 +461,7 @@ class BracketVisualizer {
     
     // Adjuntar event listeners
     attachEventListeners() {
-        // Los event listeners se manejan a traves de funciones globales
+        // Los event listeners se manejan a través de funciones globales
         // definidas en el archivo principal
     }
     
@@ -473,12 +473,12 @@ class BracketVisualizer {
     }
 }
 
-// Funcion global para declarar ganador
+// Función global para declarar ganador
 window.declareMatchWinner = function(matchId, winnerId) {
     if (window.currentBracket) {
         const success = window.currentBracket.processMatchResult(matchId, winnerId);
         if (success) {
-            // Actualizar visualizacion
+            // Actualizar visualización
             if (window.bracketVisualizer) {
                 window.bracketVisualizer.update();
             }
@@ -490,7 +490,7 @@ window.declareMatchWinner = function(matchId, winnerId) {
             updateTournamentInfo();
             updateLeaderboard();
             
-            console.log('Resultado procesado: Match ' + matchId + ', Ganador: ' + winnerId);
+            console.log(`✅ Resultado procesado: Match ${matchId}, Ganador: ${winnerId}`);
         }
     }
 };
@@ -498,4 +498,4 @@ window.declareMatchWinner = function(matchId, winnerId) {
 // Exportar para uso global
 window.BracketVisualizer = BracketVisualizer;
 
-console.log('Visualizador de bracket listo');
+console.log('✅ Visualizador de bracket listo');

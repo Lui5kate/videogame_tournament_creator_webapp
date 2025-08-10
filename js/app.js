@@ -1,5 +1,5 @@
-console.log('🎮 TORNEO DE VIDEOJUEGOS - SISTEMA DE DOBLE ELIMINACIÓN');
-console.log('Versión: Double Elimination Bracket - ' + new Date().toLocaleTimeString());
+console.log('TORNEO DE VIDEOJUEGOS - SISTEMA DE DOBLE ELIMINACION');
+console.log('Version: Double Elimination Bracket - ' + new Date().toLocaleTimeString());
 
 // ===== VARIABLES GLOBALES =====
 let teams = JSON.parse(localStorage.getItem('tournament-teams')) || [];

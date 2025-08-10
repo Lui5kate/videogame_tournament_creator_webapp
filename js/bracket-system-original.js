@@ -1,6 +1,6 @@
-console.log('SISTEMA DE BRACKET DE DOBLE ELIMINACION CARGADO');
+console.log('🏆 SISTEMA DE BRACKET DE DOBLE ELIMINACIÓN CARGADO');
 
-// ===== ESTRUCTURA DEL BRACKET DE DOBLE ELIMINACION =====
+// ===== ESTRUCTURA DEL BRACKET DE DOBLE ELIMINACIÓN =====
 
 class DoubleEliminationBracket {
     constructor(teams, games) {
@@ -16,7 +16,7 @@ class DoubleEliminationBracket {
         this.grandFinalsReset = null; // Si el ganador de losers gana la primera grand final
         
         // Estado del torneo
-        this.currentPhase = 'winners'; // winners, losers, grand-finals, completed
+        this.currentPhase = 'winners'; // 'winners', 'losers', 'grand-finals', 'completed'
         this.matchIdCounter = 1;
         
         this.generateBracket();
@@ -34,20 +34,20 @@ class DoubleEliminationBracket {
         const winnersRounds = Math.ceil(Math.log2(teamCount));
         const losersRounds = (winnersRounds - 1) * 2;
         
-        console.log('Generando bracket para ' + teamCount + ' equipos:');
-        console.log('   Winners Bracket: ' + winnersRounds + ' rondas');
-        console.log('   Losers Bracket: ' + losersRounds + ' rondas');
+        console.log(`📊 Generando bracket para ${teamCount} equipos:`);
+        console.log(`   Winners Bracket: ${winnersRounds} rondas`);
+        console.log(`   Losers Bracket: ${losersRounds} rondas`);
         
         this.generateWinnersBracket(teamCount, winnersRounds);
         this.generateLosersBracket(winnersRounds);
         this.generateGrandFinals();
         
-        console.log('Bracket generado exitosamente');
+        console.log('✅ Bracket generado exitosamente');
     }
     
     // Generar bracket de ganadores
     generateWinnersBracket(teamCount, rounds) {
-        // Shuffle teams para distribucion aleatoria
+        // Shuffle teams para distribución aleatoria
         const shuffledTeams = [...this.teams].sort(() => Math.random() - 0.5);
         
         // Primera ronda del winners bracket
@@ -66,7 +66,7 @@ class DoubleEliminationBracket {
                     loser: null,
                     game: this.getNextGame(),
                     completed: false,
-                    nextMatchId: null, // Se calculara despues
+                    nextMatchId: null, // Se calculará después
                     loserNextMatchId: null // Para el losers bracket
                 };
                 firstRoundMatches.push(match);
@@ -86,8 +86,8 @@ class DoubleEliminationBracket {
                         id: this.matchIdCounter++,
                         bracket: 'winners',
                         round: round,
-                        team1: null, // Se llenara con el ganador de previousRoundMatches[i]
-                        team2: null, // Se llenara con el ganador de previousRoundMatches[i + 1]
+                        team1: null, // Se llenará con el ganador de previousRoundMatches[i]
+                        team2: null, // Se llenará con el ganador de previousRoundMatches[i + 1]
                         winner: null,
                         loser: null,
                         game: this.getNextGame(),
@@ -112,7 +112,7 @@ class DoubleEliminationBracket {
     
     // Generar bracket de perdedores
     generateLosersBracket(winnersRounds) {
-        // El losers bracket es mas complejo, alternando entre:
+        // El losers bracket es más complejo, alternando entre:
         // 1. Matches de perdedores del winners bracket
         // 2. Matches entre sobrevivientes del losers bracket
         
@@ -152,7 +152,7 @@ class DoubleEliminationBracket {
         }
         
         // Continuar generando rondas de losers bracket
-        // Esta es una implementacion simplificada - en un torneo real seria mas complejo
+        // Esta es una implementación simplificada - en un torneo real sería más complejo
         for (let winnersRoundIndex = 1; winnersRoundIndex < this.winnersBracket.length; winnersRoundIndex++) {
             const winnersRound = this.winnersBracket[winnersRoundIndex];
             const losersRoundMatches = [];
@@ -163,8 +163,8 @@ class DoubleEliminationBracket {
                     id: this.matchIdCounter++,
                     bracket: 'losers',
                     round: losersRound,
-                    team1: null, // Se llenara dinamicamente
-                    team2: null, // Se llenara dinamicamente
+                    team1: null, // Se llenará dinámicamente
+                    team2: null, // Se llenará dinámicamente
                     winner: null,
                     loser: null,
                     game: this.getNextGame(),
@@ -221,32 +221,32 @@ class DoubleEliminationBracket {
             // Reiniciar cola cuando se agoten los juegos
             this.gameQueue = [...this.games];
             this.usedGames = [];
-            console.log('Cola de juegos reiniciada');
+            console.log('🔄 Cola de juegos reiniciada');
         }
         
         const gameIndex = Math.floor(Math.random() * this.gameQueue.length);
         const selectedGame = this.gameQueue.splice(gameIndex, 1)[0];
         this.usedGames.push(selectedGame);
         
-        console.log('Juego asignado: ' + selectedGame.name);
+        console.log(`🎮 Juego asignado: ${selectedGame.name}`);
         return selectedGame;
     }
     
-    // Obtener todas las partidas en orden de ejecucion
+    // Obtener todas las partidas en orden de ejecución
     getAllMatches() {
         const allMatches = [];
         
         // Winners bracket matches
         this.winnersBracket.forEach((round, roundIndex) => {
             round.forEach(match => {
-                allMatches.push({...match, displayRound: 'W' + (roundIndex + 1)});
+                allMatches.push({...match, displayRound: `W${roundIndex + 1}`});
             });
         });
         
         // Losers bracket matches
         this.losersBracket.forEach((round, roundIndex) => {
             round.forEach(match => {
-                allMatches.push({...match, displayRound: 'L' + (roundIndex + 1)});
+                allMatches.push({...match, displayRound: `L${roundIndex + 1}`});
             });
         });
         
@@ -262,14 +262,14 @@ class DoubleEliminationBracket {
         return allMatches;
     }
     
-    // Obtener proxima partida disponible
+    // Obtener próxima partida disponible
     getNextAvailableMatch() {
         const allMatches = this.getAllMatches();
         
         return allMatches.find(match => {
             if (match.completed) return false;
             
-            // Verificar si las dependencias estan completadas
+            // Verificar si las dependencias están completadas
             if (match.dependsOn) {
                 const dependencies = allMatches.filter(m => match.dependsOn.includes(m.id));
                 return dependencies.every(dep => dep.completed);
@@ -298,9 +298,9 @@ class DoubleEliminationBracket {
         match.loser = loser;
         match.completed = true;
         
-        console.log(winner.name + ' vence a ' + loser.name + ' en ' + match.game.name);
+        console.log(`🏆 ${winner.name} vence a ${loser.name} en ${match.game.name}`);
         
-        // Actualizar estadisticas
+        // Actualizar estadísticas
         this.updateTeamStats(winner, loser);
         
         // Avanzar equipos en el bracket
@@ -309,7 +309,7 @@ class DoubleEliminationBracket {
         return true;
     }
     
-    // Avanzar equipos despues de una partida
+    // Avanzar equipos después de una partida
     advanceTeams(completedMatch) {
         const allMatches = this.getAllMatches();
         
@@ -347,14 +347,14 @@ class DoubleEliminationBracket {
     
     // Manejar resultado de Grand Finals
     handleGrandFinalsResult(grandFinalsMatch) {
-        // Implementar logica especifica de grand finals
+        // Implementar lógica específica de grand finals
         if (grandFinalsMatch.winner) {
             // Determinar si necesita reset o si termina el torneo
-            console.log('Posible campeon: ' + grandFinalsMatch.winner.name);
+            console.log(`🎉 Posible campeón: ${grandFinalsMatch.winner.name}`);
         }
     }
     
-    // Actualizar estadisticas de equipos
+    // Actualizar estadísticas de equipos
     updateTeamStats(winner, loser) {
         // Encontrar equipos en el array principal y actualizar stats
         const winnerTeam = this.teams.find(t => t.id === winner.id);
@@ -392,4 +392,4 @@ class DoubleEliminationBracket {
 // Exportar para uso global
 window.DoubleEliminationBracket = DoubleEliminationBracket;
 
-console.log('Sistema de bracket de doble eliminacion listo');
+console.log('✅ Sistema de bracket de doble eliminación listo');
