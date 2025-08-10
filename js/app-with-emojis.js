@@ -29,7 +29,7 @@ function getGameById(id) {
     return games.find(game => game.id === id);
 }
 
-// ===== FUNCIONES BASICAS =====
+// ===== FUNCIONES BÁSICAS =====
 function showSection(sectionName) {
     const sections = document.querySelectorAll('.section');
     sections.forEach(section => section.classList.remove('active'));
@@ -56,7 +56,7 @@ function initializeApp() {
     showSection('brackets');
 }
 
-// ===== GESTION DEL BRACKET =====
+// ===== GESTIÓN DEL BRACKET =====
 function loadBracketFromStorage() {
     try {
         const bracketData = localStorage.getItem('tournament-bracket');
@@ -106,27 +106,30 @@ function restoreBracketState(bracket, data) {
 
 function startTournament() {
     if (teams.length < 2) {
-        alert('Necesitas al menos 2 equipos para comenzar el torneo');
+        alert('⚠️ Necesitas al menos 2 equipos para comenzar el torneo');
         return;
     }
     
-    // Calcular numero de partidas para bracket de doble eliminacion
+    // Calcular número de partidas para bracket de doble eliminación
     const teamCount = teams.length;
     const winnersRounds = Math.ceil(Math.log2(teamCount));
-    const estimatedMatches = (teamCount - 1) + (teamCount - 2) + 1; // Aproximacion
+    const estimatedMatches = (teamCount - 1) + (teamCount - 2) + 1; // Aproximación
     
-    const confirmMessage = 'Iniciar Bracket de Doble Eliminacion?\n\n' +
-        'Configuracion:\n' +
-        '• ' + teamCount + ' equipos registrados\n' +
-        '• ' + games.length + ' juegos disponibles\n' +
-        '• Aproximadamente ' + estimatedMatches + ' partidas\n' +
-        '• Sistema: Winners + Losers + Grand Finals\n\n' +
-        'Caracteristicas:\n' +
-        '• Perdedor en Winners -> Losers Bracket\n' +
-        '• Perdedor en Losers -> Eliminado\n' +
-        '• Juegos asignados aleatoriamente\n' +
-        '• Sin repetir juegos hasta usar todos\n\n' +
-        'Continuar?';
+    const confirmMessage = `🏆 ¿Iniciar Bracket de Doble Eliminación?
+
+📊 Configuración:
+• ${teamCount} equipos registrados
+• ${games.length} juegos disponibles
+• Aproximadamente ${estimatedMatches} partidas
+• Sistema: Winners + Losers + Grand Finals
+
+🎯 Características:
+• Perdedor en Winners → Losers Bracket
+• Perdedor en Losers → Eliminado
+• Juegos asignados aleatoriamente
+• Sin repetir juegos hasta usar todos
+
+¿Continuar?`;
     
     if (confirm(confirmMessage)) {
         try {
@@ -146,21 +149,24 @@ function startTournament() {
             generateBrackets();
             
             const actualMatches = currentBracket.getAllMatches().length;
-            alert('Bracket de Doble Eliminacion Creado!\n\n' +
-                'Partidas generadas: ' + actualMatches + '\n' +
-                'Winners Bracket: ' + currentBracket.winnersBracket.length + ' rondas\n' +
-                'Losers Bracket: ' + currentBracket.losersBracket.length + ' rondas\n' +
-                'Grand Finals: Lista\n\n' +
-                'Que comience la batalla!');
+            alert(`🎉 ¡Bracket de Doble Eliminación Creado!
+
+📈 Partidas generadas: ${actualMatches}
+🏆 Winners Bracket: ${currentBracket.winnersBracket.length} rondas
+💀 Losers Bracket: ${currentBracket.losersBracket.length} rondas
+👑 Grand Finals: Lista
+
+¡Que comience la batalla! 🔥`);
             
         } catch (error) {
             console.error('Error creando bracket:', error);
-            alert('Error creando el bracket. Verifica que tengas suficientes equipos.');
+            alert('❌ Error creando el bracket. Verifica que tengas suficientes equipos.');
         }
     }
 }
+
 function resetTournament() {
-    if (confirm('Reiniciar Torneo Completo?\n\nEsto eliminara todo el bracket y reiniciara las estadisticas.')) {
+    if (confirm('🔄 ¿Reiniciar Torneo Completo?\n\nEsto eliminará todo el bracket y reiniciará las estadísticas.')) {
         tournamentState = 'preparing';
         localStorage.setItem('tournament-state', tournamentState);
         
@@ -168,7 +174,7 @@ function resetTournament() {
         currentBracket = null;
         localStorage.removeItem('tournament-bracket');
         
-        // Reiniciar estadisticas de equipos
+        // Reiniciar estadísticas de equipos
         teams.forEach(team => {
             team.stats = {
                 played: 0,
@@ -185,45 +191,45 @@ function resetTournament() {
         generateBrackets();
         updateLeaderboard();
         
-        alert('Torneo reiniciado correctamente\n\nListo para crear nuevo bracket de doble eliminacion.');
+        alert('✅ Torneo reiniciado correctamente\n\n🏆 Listo para crear nuevo bracket de doble eliminación.');
     }
 }
 
-// ===== GENERACION DE BRACKETS =====
+// ===== GENERACIÓN DE BRACKETS =====
 function generateBrackets() {
     const container = document.getElementById('brackets');
     if (!container) return;
     
     if (tournamentState === 'preparing') {
-        // Mostrar informacion pre-torneo
+        // Mostrar información pre-torneo
         container.innerHTML = `
             <div style="text-align: center; padding: 2rem;">
-                <h2 style="color: var(--accent-color); margin-bottom: 1rem;">Bracket de Doble Eliminacion</h2>
+                <h2 style="color: var(--accent-color); margin-bottom: 1rem;">🏆 Bracket de Doble Eliminación</h2>
                 
                 <div style="background: var(--bg-medium); padding: 1.5rem; border-radius: var(--border-radius); margin-bottom: 2rem;">
-                    <h3 style="color: var(--primary-color); margin-bottom: 1rem;">Como Funciona</h3>
+                    <h3 style="color: var(--primary-color); margin-bottom: 1rem;">📋 Cómo Funciona</h3>
                     <div style="text-align: left; max-width: 600px; margin: 0 auto;">
-                        <p style="margin-bottom: 0.8rem;"><strong>Winners Bracket:</strong> Los equipos compiten normalmente. El perdedor pasa al Losers Bracket.</p>
-                        <p style="margin-bottom: 0.8rem;"><strong>Losers Bracket:</strong> Segunda oportunidad. Si pierdes aqui, quedas eliminado.</p>
-                        <p style="margin-bottom: 0.8rem;"><strong>Grand Finals:</strong> Ganador de Winners vs Ganador de Losers.</p>
-                        <p style="margin-bottom: 0.8rem;"><strong>Juegos:</strong> Asignados aleatoriamente, sin repetir hasta usar todos.</p>
+                        <p style="margin-bottom: 0.8rem;"><strong>🏆 Winners Bracket:</strong> Los equipos compiten normalmente. El perdedor pasa al Losers Bracket.</p>
+                        <p style="margin-bottom: 0.8rem;"><strong>💀 Losers Bracket:</strong> Segunda oportunidad. Si pierdes aquí, quedas eliminado.</p>
+                        <p style="margin-bottom: 0.8rem;"><strong>👑 Grand Finals:</strong> Ganador de Winners vs Ganador de Losers.</p>
+                        <p style="margin-bottom: 0.8rem;"><strong>🎮 Juegos:</strong> Asignados aleatoriamente, sin repetir hasta usar todos.</p>
                     </div>
                 </div>
                 
                 ${teams.length >= 2 ? `
                     <div style="background: var(--bg-dark); padding: 1rem; border-radius: var(--border-radius); margin-top: 2rem;">
-                        <p style="color: var(--secondary-color);">Haz clic en "Comenzar Torneo" para generar el bracket</p>
+                        <p style="color: var(--secondary-color);">⏳ Haz clic en "Comenzar Torneo" para generar el bracket</p>
                         <p style="font-size: 10px; opacity: 0.6; margin-top: 0.5rem;">
-                            Con ${teams.length} equipos se generaran aproximadamente ${Math.ceil((teams.length - 1) + (teams.length - 2) + 1)} partidas
+                            Con ${teams.length} equipos se generarán aproximadamente ${Math.ceil((teams.length - 1) + (teams.length - 2) + 1)} partidas
                         </p>
                         <p style="font-size: 9px; opacity: 0.5; margin-top: 0.3rem;">
-                            Sistema de doble eliminacion con Winners, Losers y Grand Finals
+                            Sistema de doble eliminación con Winners, Losers y Grand Finals
                         </p>
                     </div>
                 ` : `
                     <div style="background: var(--bg-dark); padding: 1rem; border-radius: var(--border-radius); margin-top: 2rem;">
-                        <p style="color: var(--danger-color);">Necesitas al menos 2 equipos para crear el bracket</p>
-                        <p style="font-size: 10px; margin-top: 0.5rem;">Ve a la seccion "Registro" para agregar equipos</p>
+                        <p style="color: var(--danger-color);">⚠️ Necesitas al menos 2 equipos para crear el bracket</p>
+                        <p style="font-size: 10px; margin-top: 0.5rem;">Ve a la sección "Registro" para agregar equipos</p>
                     </div>
                 `}
             </div>
@@ -240,14 +246,10 @@ function generateBrackets() {
     } else {
         container.innerHTML = `
             <div style="text-align: center; padding: 2rem;">
-                <h3 style="color: var(--danger-color);">Error: Bracket no encontrado</h3>
+                <h3 style="color: var(--danger-color);">❌ Error: Bracket no encontrado</h3>
                 <p>Reinicia el torneo para crear un nuevo bracket</p>
             </div>
-        `;
-    }
-}
-
-// ===== INFORMACION DEL TORNEO =====
+// ===== INFORMACIÓN DEL TORNEO =====
 function updateTournamentInfo() {
     const teamsCountEl = document.getElementById('teams-count');
     const matchesPlayedEl = document.getElementById('matches-played');
@@ -266,30 +268,30 @@ function updateTournamentInfo() {
         
         switch(tournamentState) {
             case 'preparing':
-                status = teams.length < 2 ? 'Esperando equipos...' : 'Listo (' + totalMatches + ' partidas)';
+                status = teams.length < 2 ? '⏳ Esperando equipos...' : `✅ Listo (${totalMatches} partidas)`;
                 break;
             case 'active':
-                status = 'ACTIVO ' + bracketStatus.phase.toUpperCase() + ' (' + bracketStatus.progress + '% - ' + matchesPlayed + '/' + totalMatches + ')';
+                status = `🚀 ${bracketStatus.phase.toUpperCase()} (${bracketStatus.progress}% - ${matchesPlayed}/${totalMatches})`;
                 break;
             case 'finished':
-                status = 'Torneo finalizado';
+                status = '🏆 Torneo finalizado';
                 break;
             default:
-                status = 'Preparando...';
+                status = '⏳ Preparando...';
         }
     } else {
         switch(tournamentState) {
             case 'preparing':
-                status = teams.length < 2 ? 'Esperando equipos...' : 'Listo para bracket';
+                status = teams.length < 2 ? '⏳ Esperando equipos...' : '✅ Listo para bracket';
                 break;
             case 'active':
-                status = 'Torneo activo';
+                status = '🚀 Torneo activo';
                 break;
             case 'finished':
-                status = 'Torneo finalizado';
+                status = '🏆 Torneo finalizado';
                 break;
             default:
-                status = 'Preparando...';
+                status = '⏳ Preparando...';
         }
     }
     
@@ -301,7 +303,7 @@ function updateTournamentInfo() {
                 <span>${status}</span>
                 ${tournamentState === 'preparing' && teams.length >= 2 ? `
                     <div style="font-size: 8px; opacity: 0.7; background: rgba(255, 204, 2, 0.1); padding: 0.3rem; border-radius: 4px;">
-                        Sistema de doble eliminacion listo
+                        🏆 Sistema de doble eliminación listo
                     </div>
                 ` : ''}
             </div>
@@ -314,7 +316,7 @@ function updateTournamentControls() {
     const resetBtn = document.getElementById('reset-btn');
     const finalizeBtn = document.getElementById('finalize-btn');
     
-    // Controlar formularios segun estado del torneo
+    // Controlar formularios según estado del torneo
     updateFormVisibility();
     
     if (startBtn) {
@@ -327,7 +329,7 @@ function updateTournamentControls() {
     }
     
     if (finalizeBtn) {
-        finalizeBtn.style.display = 'none'; // No necesario en doble eliminacion
+        finalizeBtn.style.display = 'none'; // No necesario en doble eliminación
     }
 }
 
@@ -344,20 +346,20 @@ function updateFormVisibility() {
     });
 }
 
-// ===== GESTION DE EQUIPOS =====
+// ===== GESTIÓN DE EQUIPOS =====
 function registerTeam() {
     const teamName = document.getElementById('team-name').value.trim();
     const player1 = document.getElementById('player1').value.trim();
     const player2 = document.getElementById('player2').value.trim();
     
     if (!teamName || !player1 || !player2) {
-        alert('Por favor completa todos los campos obligatorios');
+        alert('⚠️ Por favor completa todos los campos obligatorios');
         return;
     }
     
     // Verificar que no exista un equipo con el mismo nombre
     if (teams.find(team => team.name.toLowerCase() === teamName.toLowerCase())) {
-        alert('Ya existe un equipo con ese nombre');
+        alert('⚠️ Ya existe un equipo con ese nombre');
         return;
     }
     
@@ -392,7 +394,7 @@ function registerTeam() {
     updateTournamentInfo();
     generateBrackets();
     
-    alert('Equipo "' + teamName + '" registrado exitosamente!');
+    alert(`✅ Equipo "${teamName}" registrado exitosamente!`);
 }
 
 function handleTeamPhotos(team) {
@@ -444,7 +446,7 @@ function loadTeams() {
     
     let html = `
         <div style="margin-bottom: 1rem; text-align: center;">
-            <p style="color: var(--accent-color); font-size: 12px;">Equipos Registrados (${teams.length})</p>
+            <p style="color: var(--accent-color); font-size: 12px;">👥 Equipos Registrados (${teams.length})</p>
         </div>
         <div class="teams-grid">
     `;
@@ -461,14 +463,14 @@ function loadTeams() {
                     <h4>${team.name}</h4>
                     <p>${team.players.join(' & ')}</p>
                     <div class="team-stats">
-                        <span>Partidas: ${team.stats.played}</span>
-                        <span>Ganadas: ${team.stats.won}</span>
-                        <span>Perdidas: ${team.stats.lost}</span>
-                        <span>Puntos: ${team.stats.points}</span>
+                        <span>🎮 ${team.stats.played}</span>
+                        <span>🏆 ${team.stats.won}</span>
+                        <span>💔 ${team.stats.lost}</span>
+                        <span>⭐ ${team.stats.points}</span>
                     </div>
                 </div>
                 <button onclick="removeTeam(${team.id})" class="remove-btn" ${tournamentState === 'active' ? 'disabled' : ''}>
-                    Eliminar
+                    🗑️
                 </button>
             </div>
         `;
@@ -480,14 +482,14 @@ function loadTeams() {
 
 function removeTeam(teamId) {
     if (tournamentState === 'active') {
-        alert('No puedes eliminar equipos durante el torneo');
+        alert('⚠️ No puedes eliminar equipos durante el torneo');
         return;
     }
     
     const team = teams.find(t => t.id === teamId);
     if (!team) return;
     
-    if (confirm('Eliminar el equipo "' + team.name + '"?')) {
+    if (confirm(`¿Eliminar el equipo "${team.name}"?`)) {
         teams = teams.filter(t => t.id !== teamId);
         localStorage.setItem('tournament-teams', JSON.stringify(teams));
         
@@ -495,18 +497,14 @@ function removeTeam(teamId) {
         updateTournamentInfo();
         generateBrackets();
         
-        alert('Equipo "' + team.name + '" eliminado');
-    }
-}
-
-// ===== GESTION DE JUEGOS =====
+// ===== GESTIÓN DE JUEGOS =====
 function loadGames() {
     const container = document.getElementById('games-list');
     if (!container) return;
     
     let html = `
         <div style="margin-bottom: 1rem; text-align: center;">
-            <p style="color: var(--accent-color); font-size: 12px;">Juegos Disponibles (${games.length})</p>
+            <p style="color: var(--accent-color); font-size: 12px;">🎮 Juegos Disponibles (${games.length})</p>
         </div>
         <div class="games-grid">
     `;
@@ -523,7 +521,7 @@ function loadGames() {
                 </div>
                 ${isCustom ? `
                     <button onclick="removeGame(${game.id})" class="remove-btn" ${tournamentState === 'active' ? 'disabled' : ''}>
-                        Eliminar
+                        🗑️
                     </button>
                 ` : ''}
             </div>
@@ -540,20 +538,20 @@ function addGame() {
     const gameRules = document.getElementById('game-rules').value.trim();
     
     if (!gameName) {
-        alert('El nombre del juego es obligatorio');
+        alert('⚠️ El nombre del juego es obligatorio');
         return;
     }
     
     // Verificar que no exista un juego con el mismo nombre
     if (games.find(game => game.name.toLowerCase() === gameName.toLowerCase())) {
-        alert('Ya existe un juego con ese nombre');
+        alert('⚠️ Ya existe un juego con ese nombre');
         return;
     }
     
     const newGame = {
         id: Date.now() + 1000, // ID alto para juegos personalizados
         name: gameName,
-        emoji: gameEmoji || 'GAME',
+        emoji: gameEmoji || '🎮',
         rules: gameRules || ''
     };
     
@@ -566,40 +564,40 @@ function addGame() {
     // Actualizar interfaz
     loadGames();
     
-    alert('Juego "' + gameName + '" agregado exitosamente!');
+    alert(`✅ Juego "${gameName}" agregado exitosamente!`);
 }
 
 function removeGame(gameId) {
     if (tournamentState === 'active') {
-        alert('No puedes eliminar juegos durante el torneo');
+        alert('⚠️ No puedes eliminar juegos durante el torneo');
         return;
     }
     
     const game = games.find(g => g.id === gameId);
     if (!game) return;
     
-    if (confirm('Eliminar el juego "' + game.name + '"?')) {
+    if (confirm(`¿Eliminar el juego "${game.name}"?`)) {
         games = games.filter(g => g.id !== gameId);
         localStorage.setItem('tournament-games', JSON.stringify(games));
         
         loadGames();
         
-        alert('Juego "' + game.name + '" eliminado');
+        alert(`✅ Juego "${game.name}" eliminado`);
     }
 }
 
-// ===== CLASIFICACION =====
+// ===== CLASIFICACIÓN =====
 function updateLeaderboard() {
     const container = document.getElementById('leaderboard');
     if (!container) return;
     
-    console.log('Actualizando clasificacion. Equipos disponibles:', teams.length);
+    console.log('📊 Actualizando clasificación. Equipos disponibles:', teams.length);
     
     if (teams.length === 0) {
         container.innerHTML = `
             <div style="text-align: center; padding: 2rem;">
                 <p style="color: var(--text-light); opacity: 0.7;">No hay equipos registrados</p>
-                <p style="font-size: 10px; margin-top: 1rem;">Ve a la seccion "Registro" para agregar equipos</p>
+                <p style="font-size: 10px; margin-top: 1rem;">Ve a la sección "Registro" para agregar equipos</p>
             </div>
         `;
         return;
@@ -614,12 +612,12 @@ function updateLeaderboard() {
     
     let html = `
         <div style="margin-bottom: 1rem; text-align: center;">
-            <p style="color: var(--accent-color); font-size: 12px;">Clasificacion General (${teams.length} equipos)</p>
+            <p style="color: var(--accent-color); font-size: 12px;">📊 Clasificación General (${teams.length} equipos)</p>
         </div>
         <table class="leaderboard-table">
             <thead>
                 <tr>
-                    <th>Posicion</th>
+                    <th>Posición</th>
                     <th>Equipo</th>
                     <th>Jugadores</th>
                     <th>Partidas</th>
@@ -637,21 +635,19 @@ function updateLeaderboard() {
         let positionClass = '';
         
         if (position === 1) {
-            positionEmoji = '1st';
+            positionEmoji = '🥇';
             positionClass = 'position-1';
         } else if (position === 2) {
-            positionEmoji = '2nd';
+            positionEmoji = '🥈';
             positionClass = 'position-2';
         } else if (position === 3) {
-            positionEmoji = '3rd';
+            positionEmoji = '🥉';
             positionClass = 'position-3';
-        } else {
-            positionEmoji = position + 'th';
         }
         
         html += `
             <tr class="${positionClass}">
-                <td>${positionEmoji}</td>
+                <td>${positionEmoji} ${position}</td>
                 <td><strong>${team.name}</strong></td>
                 <td>${team.players.join(' & ')}</td>
                 <td>${team.stats.played}</td>
@@ -668,10 +664,10 @@ function updateLeaderboard() {
         
         <div style="text-align: center; margin-top: 2rem; padding: 1rem; background: var(--bg-dark); border-radius: var(--border-radius);">
             <p style="font-size: 10px; opacity: 0.8; margin-bottom: 1rem;">
-                <strong>Sistema de puntos:</strong> 3 puntos por victoria, 1 punto por participacion
+                <strong>Sistema de puntos:</strong> 3 puntos por victoria, 1 punto por participación
             </p>
             <button onclick="resetLeaderboard()" class="btn-secondary" style="font-size: 9px; padding: 0.5rem 1rem;">
-                Reiniciar Clasificacion
+                🔄 Reiniciar Clasificación
             </button>
         </div>
     `;
@@ -680,7 +676,7 @@ function updateLeaderboard() {
 }
 
 function resetLeaderboard() {
-    if (confirm('Estas seguro de que quieres reiniciar la clasificacion?\n\nEsto pondra todos los puntos y estadisticas en 0.')) {
+    if (confirm('🔄 ¿Estás seguro de que quieres reiniciar la clasificación?\n\nEsto pondrá todos los puntos y estadísticas en 0.')) {
         teams.forEach(team => {
             team.stats = {
                 played: 0,
@@ -695,7 +691,7 @@ function resetLeaderboard() {
         updateLeaderboard();
         loadTeams();
         
-        alert('Clasificacion reiniciada correctamente');
+        alert('✅ Clasificación reiniciada correctamente');
     }
 }
 
@@ -704,7 +700,7 @@ function handleChatMessageSidebar(e) {
     e.preventDefault();
     
     const message = document.getElementById('chat-message-sidebar').value.trim();
-    const username = document.getElementById('chat-username-sidebar').value.trim() || 'Anonimo';
+    const username = document.getElementById('chat-username-sidebar').value.trim() || 'Anónimo';
     
     if (!message) return;
     
@@ -730,14 +726,14 @@ function loadChatSidebar() {
     if (chatMessages.length === 0) {
         container.innerHTML = `
             <div style="text-align: center; padding: 1rem; opacity: 0.5;">
-                <p style="font-size: 10px;">No hay mensajes aun</p>
-                <p style="font-size: 8px;">Se el primero en comentar!</p>
+                <p style="font-size: 10px;">No hay mensajes aún</p>
+                <p style="font-size: 8px;">¡Sé el primero en comentar!</p>
             </div>
         `;
         return;
     }
     
-    const recentMessages = chatMessages.slice(-50); // Mostrar ultimos 50 mensajes
+    const recentMessages = chatMessages.slice(-50); // Mostrar últimos 50 mensajes
     
     let html = '';
     recentMessages.forEach(msg => {
@@ -807,10 +803,10 @@ function setupEventListeners() {
     }
 }
 
-// ===== INICIALIZACION =====
+// ===== INICIALIZACIÓN =====
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Inicializando aplicacion de doble eliminacion...');
-    console.log('Equipos en localStorage:', localStorage.getItem('tournament-teams'));
+    console.log('🎮 Inicializando aplicación de doble eliminación...');
+    console.log('📊 Equipos en localStorage:', localStorage.getItem('tournament-teams'));
     
     try {
         initializeApp();
@@ -821,22 +817,22 @@ document.addEventListener('DOMContentLoaded', function() {
         updateTournamentInfo();
         updateTournamentControls();
         
-        // Forzar actualizacion de brackets y clasificacion
+        // Forzar actualización de brackets y clasificación
         setTimeout(() => {
             generateBrackets();
             updateLeaderboard();
         }, 100);
         
-        console.log('Aplicacion inicializada correctamente');
+        console.log('✅ Aplicación inicializada correctamente');
         
     } catch (error) {
-        console.error('Error durante la inicializacion:', error);
-        alert('Error al cargar la aplicacion. Revisa la consola para mas detalles.');
+        console.error('❌ Error durante la inicialización:', error);
+        alert('Error al cargar la aplicación. Revisa la consola para más detalles.');
     }
 });
 
-console.log('Sistema de Doble Eliminacion cargado correctamente - FINAL DEL ARCHIVO');
-console.log('Funciones disponibles:', {
+console.log('🎮 Sistema de Doble Eliminación cargado correctamente - FINAL DEL ARCHIVO');
+console.log('📋 Funciones disponibles:', {
     showSection: typeof showSection,
     startTournament: typeof startTournament,
     handleChatMessageSidebar: typeof handleChatMessageSidebar,
