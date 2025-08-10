@@ -1,0 +1,27 @@
+# Archivos temporales
+*.tmp
+*.temp
+*~
+
+# Archivos de backup
+*.backup
+*-backup-*
+
+# Logs
+*.log
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+# Archivos de IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Node modules (si se usa en el futuro)
+node_modules/
+
+# Archivos de test temporales
+test-*
