@@ -1,0 +1,31 @@
+# Configuración para GitHub Pages
+title: "Torneo de Videojuegos - Cumpleaños Luis"
+description: "App web para gestionar torneos de videojuegos por parejas con estilo arcade retro"
+
+# Configuración del sitio
+baseurl: ""
+url: ""
+
+# Plugins
+plugins:
+  - jekyll-sitemap
+
+# Archivos a incluir
+include:
+  - _headers
+  - _redirects
+
+# Archivos a excluir
+exclude:
+  - README.md
+  - data/
+  - .github/
+
+# Configuración de markdown
+markdown: kramdown
+highlighter: rouge
+
+# Configuración de kramdown
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge

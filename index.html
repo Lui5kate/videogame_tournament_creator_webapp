@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎂🎮 Torneo de Cumpleaños de Luis - ¡Que Comience la Batalla! 🏆🎉</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P:wght@400&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Decoraciones de cumpleaños flotantes -->
+    <div class="birthday-decorations">
+        <div class="birthday-decoration">🎈</div>
+        <div class="birthday-decoration">🎂</div>
+        <div class="birthday-decoration">🎉</div>
+        <div class="birthday-decoration">🎊</div>
+        <div class="birthday-decoration">🎁</div>
+    </div>
+
+    <!-- Navegación fija -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <span class="birthday-logo">
+                    🎂 CUMPLE-TORNEO 
+                    <span class="birthday-subtitle">DE LUIS</span>
+                    🎮
+                </span>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="#" onclick="showSection('brackets')" class="nav-link">Brackets</a></li>
+                <li><a href="#" onclick="showSection('registro')" class="nav-link">Registro</a></li>
+                <li><a href="#" onclick="showSection('juegos')" class="nav-link">Juegos</a></li>
+                <li><a href="#" onclick="showSection('clasificacion')" class="nav-link">Clasificación</a></li>
+            </ul>
+            <div class="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Contenedor principal -->
+    <div class="container">
+        <!-- Sección Brackets -->
+        <section id="brackets" class="section active">
+            <h1 class="section-title birthday-title">
+                🎉 TORNEO DE CUMPLEAÑOS 🎂
+                <div class="birthday-subtitle-main">¡CELEBRANDO CON LUIS!</div>
+                🎮🏆🎊
+            </h1>
+            <div class="tournament-info">
+                <div class="info-card">
+                    <h3>Estado del Torneo</h3>
+                    <p id="tournament-status">Preparando...</p>
+                </div>
+                <div class="info-card">
+                    <h3>Equipos Registrados</h3>
+                    <p id="teams-count">0</p>
+                </div>
+                <div class="info-card">
+                    <h3>Partidas Jugadas</h3>
+                    <p id="matches-played">0</p>
+                </div>
+            </div>
+            
+            <!-- Controles del Torneo -->
+            <div class="tournament-controls">
+                <button onclick="startTournament()" class="btn btn-success" id="start-btn" style="font-size: 8px; padding: 0.5rem;">
+                    🚀 Comenzar Torneo
+                </button>
+                <button onclick="resetTournament()" class="btn btn-warning" id="reset-btn" style="font-size: 8px; padding: 0.5rem;">
+                    🔄 Reiniciar Torneo
+                </button>
+                <button onclick="finalizeTournament()" class="btn btn-danger" id="finalize-btn" style="display: none; font-size: 8px; padding: 0.5rem;">
+                    🏁 Finalizar Torneo
+                </button>
+                <button onclick="optimizeStorage()" class="btn btn-secondary" style="font-size: 8px; padding: 0.5rem;">
+                    🧹 Limpiar Datos
+                </button>
+                <button onclick="emergencyCleanup()" class="btn btn-danger" style="font-size: 8px; padding: 0.5rem; background: #d32f2f;">
+                    🚨 Emergencia
+                </button>
+            </div>
+            
+            <div class="bracket-container" id="bracket-container">
+                <!-- Los brackets se generarán dinámicamente -->
+            </div>
+
+            <div class="current-match" id="current-match">
+                <h3>🎯 Próxima Partida</h3>
+                <div id="next-match-info">
+                    <p>Registra equipos para comenzar el torneo</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sección Registro -->
+        <section id="registro" class="section">
+            <h1 class="section-title">📝 REGISTRO DE EQUIPOS</h1>
+            <div class="registration-form">
+                <form id="team-form">
+                    <div class="form-group">
+                        <label for="team-name">Nombre del Equipo</label>
+                        <input type="text" id="team-name" required placeholder="Los Campeones">
+                    </div>
+                    
+                    <div class="players-section">
+                        <h3>Jugadores</h3>
+                        <div class="form-group">
+                            <label for="player1-name">Jugador 1</label>
+                            <input type="text" id="player1-name" required placeholder="Nombre del jugador 1">
+                        </div>
+                        <div class="form-group">
+                            <label for="player2-name">Jugador 2</label>
+                            <input type="text" id="player2-name" required placeholder="Nombre del jugador 2">
+                        </div>
+                    </div>
+
+                    <div class="photo-section">
+                        <h3>Fotos del Equipo</h3>
+                        <div class="photo-options">
+                            <label class="radio-option">
+                                <input type="radio" name="photo-type" value="team" checked onchange="handlePhotoTypeChange()">
+                                <span>Una foto del equipo</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="photo-type" value="individual" onchange="handlePhotoTypeChange()">
+                                <span>Fotos individuales</span>
+                            </label>
+                        </div>
+                        
+                        <div id="team-photo-upload" class="photo-upload">
+                            <label for="team-photo">Foto del Equipo</label>
+                            <input type="file" id="team-photo" accept="image/*" onchange="handlePhotoPreview('team-photo', 'team-photo-preview')">
+                            <div class="photo-preview" id="team-photo-preview"></div>
+                        </div>
+                        
+                        <div id="individual-photos-upload" class="photo-upload" style="display: none;">
+                            <div class="form-group">
+                                <label for="player1-photo">Foto Jugador 1</label>
+                                <input type="file" id="player1-photo" accept="image/*" onchange="handlePhotoPreview('player1-photo', 'player1-photo-preview')">
+                                <div class="photo-preview" id="player1-photo-preview"></div>
+                            </div>
+                            <div class="form-group">
+                                <label for="player2-photo">Foto Jugador 2</label>
+                                <input type="file" id="player2-photo" accept="image/*" onchange="handlePhotoPreview('player2-photo', 'player2-photo-preview')">
+                                <div class="photo-preview" id="player2-photo-preview"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-primary">🎮 Registrar Equipo</button>
+                </form>
+            </div>
+
+            <div class="teams-list">
+                <h3>Equipos Registrados</h3>
+                <div id="registered-teams"></div>
+            </div>
+        </section>
+
+        <!-- Sección Juegos -->
+        <section id="juegos" class="section">
+            <h1 class="section-title">🎯 JUEGOS DEL TORNEO</h1>
+            
+            <div class="add-game-form">
+                <h3>Agregar Nuevo Juego</h3>
+                <form id="game-form">
+                    <div class="form-group">
+                        <input type="text" id="game-name" placeholder="Nombre del juego" required>
+                        <button type="submit" class="btn-secondary">Agregar</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="games-grid" id="games-grid">
+                <!-- Los juegos se cargarán dinámicamente -->
+            </div>
+        </section>
+
+        <!-- Sección Clasificación -->
+        <section id="clasificacion" class="section">
+            <h1 class="section-title">🏅 CLASIFICACIÓN GENERAL</h1>
+            <div class="leaderboard" id="leaderboard">
+                <!-- La tabla se generará dinámicamente -->
+            </div>
+        </section>
+
+        <!-- Sección Chat -->
+        <section id="chat" class="section">
+            <h1 class="section-title">💬 CHAT DEL TORNEO</h1>
+            <div class="chat-container">
+                <div class="chat-messages" id="chat-messages">
+                    <!-- Los mensajes aparecerán aquí -->
+                </div>
+                <div class="chat-input">
+                    <form id="chat-form">
+                        <input type="text" id="chat-message" placeholder="Escribe tu mensaje..." required>
+                        <input type="text" id="chat-name" placeholder="Tu nombre" required>
+                        <button type="submit" class="btn-primary">Enviar</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Modal para perfil de equipo -->
+    <div id="team-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div id="team-profile-content">
+                <!-- El contenido del perfil se cargará aquí -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar Chat - SIEMPRE VISIBLE -->
+    <div id="chat-sidebar" class="chat-sidebar">
+        <div class="chat-header">
+            <h3>💬 Chat del Torneo</h3>
+        </div>
+        <div class="chat-messages-sidebar" id="chat-messages-sidebar">
+            <!-- Los mensajes aparecerán aquí -->
+        </div>
+        <form id="chat-form-sidebar" class="chat-form-sidebar">
+            <input type="text" id="chat-name-sidebar" placeholder="Tu nombre" maxlength="20" required>
+            <div class="chat-input-container">
+                <input type="text" id="chat-message-sidebar" placeholder="Escribe un mensaje..." maxlength="200" required>
+                <button type="submit" class="chat-send-btn">📤</button>
+            </div>
+        </form>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
