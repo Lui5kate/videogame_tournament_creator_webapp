@@ -699,12 +699,70 @@ function resetLeaderboard() {
     }
 }
 
+// ===== CHAT PRINCIPAL =====
+function handleChatMessage(e) {
+    e.preventDefault();
+    
+    const message = document.getElementById('chat-message').value.trim();
+    const username = document.getElementById('chat-name').value.trim() || 'Anonimo';
+    
+    if (!message) return;
+    
+    const chatMessage = {
+        id: Date.now(),
+        username: username,
+        message: message,
+        timestamp: new Date().toLocaleTimeString()
+    };
+    
+    chatMessages.push(chatMessage);
+    localStorage.setItem('tournament-chat', JSON.stringify(chatMessages));
+    
+    document.getElementById('chat-message').value = '';
+    
+    loadChatMessages();
+    loadChatSidebar(); // Actualizar sidebar también
+}
+
+function loadChatMessages() {
+    const container = document.getElementById('chat-messages');
+    if (!container) return;
+    
+    if (chatMessages.length === 0) {
+        container.innerHTML = `
+            <div style="text-align: center; padding: 2rem; opacity: 0.5;">
+                <p>No hay mensajes aun</p>
+                <p style="font-size: 10px; margin-top: 1rem;">Se el primero en comentar!</p>
+            </div>
+        `;
+        return;
+    }
+    
+    const recentMessages = chatMessages.slice(-50); // Mostrar ultimos 50 mensajes
+    
+    let html = '';
+    recentMessages.forEach(msg => {
+        html += `
+            <div class="chat-message">
+                <div class="chat-header">
+                    <span class="chat-username">${msg.username}</span>
+                    <span class="chat-timestamp">${msg.timestamp}</span>
+                </div>
+                <div class="chat-content">${msg.message}</div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+    container.scrollTop = container.scrollHeight;
+}
+
 // ===== CHAT SIDEBAR =====
 function handleChatMessageSidebar(e) {
     e.preventDefault();
     
     const message = document.getElementById('chat-message-sidebar').value.trim();
-    const username = document.getElementById('chat-username-sidebar').value.trim() || 'Anonimo';
+    const username = document.getElementById('chat-name-sidebar').value.trim() || 'Anonimo';
     
     if (!message) return;
     
@@ -758,6 +816,7 @@ function loadChatSidebar() {
 
 function initializeChatSidebar() {
     loadChatSidebar();
+    loadChatMessages(); // Cargar chat principal también
     
     // Auto-refresh cada 5 segundos
     setInterval(() => {
@@ -765,6 +824,7 @@ function initializeChatSidebar() {
         if (currentMessages.length !== chatMessages.length) {
             chatMessages = currentMessages;
             loadChatSidebar();
+            loadChatMessages();
         }
     }, 5000);
 }
@@ -782,10 +842,16 @@ function setupEventListeners() {
         });
     }
     
-    // Chat form
-    const chatForm = document.getElementById('chat-form-sidebar');
+    // Chat form principal
+    const chatForm = document.getElementById('chat-form');
     if (chatForm) {
-        chatForm.addEventListener('submit', handleChatMessageSidebar);
+        chatForm.addEventListener('submit', handleChatMessage);
+    }
+    
+    // Chat form sidebar
+    const chatFormSidebar = document.getElementById('chat-form-sidebar');
+    if (chatFormSidebar) {
+        chatFormSidebar.addEventListener('submit', handleChatMessageSidebar);
     }
     
     // Team form
