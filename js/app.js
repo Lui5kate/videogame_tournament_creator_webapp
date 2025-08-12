@@ -746,7 +746,17 @@ function initializeApp() {
     if (!localStorage.getItem('tournament-games')) {
         localStorage.setItem('tournament-games', JSON.stringify(games));
     }
+    
+    // Verificar consistencia del estado
     loadBracketFromStorage();
+    
+    // Si el estado es 'active' pero no hay bracket, resetear a 'preparing'
+    if (tournamentState === 'active' && !currentBracket) {
+        console.log('Estado inconsistente detectado, reseteando a preparing');
+        tournamentState = 'preparing';
+        localStorage.setItem('tournament-state', tournamentState);
+    }
+    
     showSection('brackets');
 }
 
@@ -758,10 +768,16 @@ function loadBracketFromStorage() {
             const data = JSON.parse(bracketData);
             currentBracket = new DoubleEliminationBracket(teams, games);
             restoreBracketState(currentBracket, data);
+            console.log('Bracket cargado desde localStorage');
+        } else {
+            currentBracket = null;
+            console.log('No hay bracket en localStorage o no hay equipos');
         }
     } catch (error) {
         console.error('Error cargando bracket:', error);
         currentBracket = null;
+        // Limpiar datos corruptos
+        localStorage.removeItem('tournament-bracket');
     }
 }
 
@@ -895,18 +911,26 @@ function generateBrackets() {
         return;
     }
     
+    // Si el torneo está activo pero no hay bracket, mostrar mensaje de error
+    if (tournamentState === 'active' && !currentBracket) {
+        container.innerHTML = `
+            <div style="text-align: center; padding: 2rem;">
+                <h3 style="color: var(--danger-color);">Error: Bracket no encontrado</h3>
+                <p>El bracket se perdio. Reinicia el torneo para crear uno nuevo.</p>
+                <button onclick="resetTournament()" style="margin-top: 1rem; padding: 0.5rem 1rem; background: var(--primary-color); color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    Reiniciar Torneo
+                </button>
+            </div>
+        `;
+        return;
+    }
+    
+    // Renderizar bracket activo
     if (currentBracket) {
         if (!bracketVisualizer) {
             bracketVisualizer = new BracketVisualizer('brackets');
         }
         bracketVisualizer.render(currentBracket);
-    } else {
-        container.innerHTML = `
-            <div style="text-align: center; padding: 2rem;">
-                <h3 style="color: var(--danger-color);">Error: Bracket no encontrado</h3>
-                <p>Reinicia el torneo para crear un nuevo bracket</p>
-            </div>
-        `;
     }
 }
 // ===== INFORMACION DEL TORNEO =====
