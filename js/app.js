@@ -817,6 +817,17 @@ function startTournament() {
         return;
     }
     
+    // Si ya hay un torneo activo, preguntar si reiniciar
+    if (tournamentState === 'active') {
+        if (!confirm('Ya hay un torneo activo.\n\n¿Quieres reiniciarlo y crear un nuevo bracket?\n\n⚠️ Esto eliminará el progreso actual.')) {
+            return;
+        }
+        // Resetear estadísticas antes de crear nuevo bracket
+        teams.forEach(team => {
+            team.stats = { played: 0, won: 0, lost: 0, points: 0 };
+        });
+    }
+    
     const teamCount = teams.length;
     const estimatedMatches = (teamCount - 1) + (teamCount - 2) + 1;
     
@@ -833,6 +844,7 @@ function startTournament() {
             currentBracket = new DoubleEliminationBracket(teams, games);
             tournamentState = 'active';
             localStorage.setItem('tournament-state', tournamentState);
+            localStorage.setItem('tournament-teams', JSON.stringify(teams));
             saveBracketToStorage();
             updateTournamentInfo();
             updateTournamentControls();
@@ -874,6 +886,87 @@ function resetTournament() {
     }
 }
 
+function emergencyCleanup() {
+    if (confirm('🚨 LIMPIEZA DE EMERGENCIA 🚨\n\nEsto eliminará TODOS los datos:\n- Equipos registrados\n- Historial de partidas\n- Mensajes de chat\n- Juegos personalizados\n- Estado del torneo\n\n¿Estás seguro?')) {
+        if (confirm('⚠️ ÚLTIMA CONFIRMACIÓN ⚠️\n\nEsta acción NO se puede deshacer.\n¿Proceder con la limpieza completa?')) {
+            // Limpiar completamente localStorage
+            localStorage.clear();
+            
+            // Resetear variables globales
+            teams = [];
+            games = [
+                { id: 1, name: 'Mario Kart', emoji: '🏎️', rules: 'Carrera de 4 vueltas. Gana el primero en llegar a la meta.' },
+                { id: 2, name: 'Super Smash Bros', emoji: '👊', rules: 'Mejor de 3 rounds. Sin items. Escenarios neutrales.' },
+                { id: 3, name: 'Marvel vs Capcom 3', emoji: '⚡', rules: 'Mejor de 5 rounds. Equipos de 3 personajes.' },
+                { id: 4, name: 'Mario Party', emoji: '🎲', rules: '10 turnos. Gana quien tenga más estrellas al final.' },
+                { id: 5, name: 'Street Fighter', emoji: '🥊', rules: 'Mejor de 5 rounds. Sin super meter inicial.' },
+                { id: 6, name: 'Tekken 7', emoji: '🥋', rules: 'Mejor de 3 rounds. Sin rage arts iniciales.' },
+                { id: 7, name: 'Rocket League', emoji: '⚽', rules: '5 minutos. Gana quien tenga más goles.' }
+            ];
+            chatMessages = [];
+            tournamentState = 'preparing';
+            currentBracket = null;
+            
+            // Reinicializar localStorage con datos por defecto
+            localStorage.setItem('tournament-games', JSON.stringify(games));
+            localStorage.setItem('tournament-teams', JSON.stringify(teams));
+            localStorage.setItem('tournament-chat', JSON.stringify(chatMessages));
+            localStorage.setItem('tournament-state', tournamentState);
+            
+            // Recargar toda la interfaz
+            loadTeams();
+            loadGames();
+            loadChatSidebar();
+            updateTournamentInfo();
+            updateTournamentControls();
+            generateBrackets();
+            updateLeaderboard();
+            
+            alert('🧹 Limpieza de emergencia completada.\nLa aplicación ha sido reiniciada completamente.');
+        }
+    }
+}
+
+function optimizeStorage() {
+    if (confirm('🧹 OPTIMIZAR ALMACENAMIENTO 🧹\n\nEsto eliminará:\n- Mensajes de chat antiguos (mantiene últimos 50)\n- Datos temporales corruptos\n- Caché innecesario\n\n¿Continuar?')) {
+        try {
+            // Limpiar mensajes de chat antiguos
+            if (chatMessages.length > 50) {
+                chatMessages = chatMessages.slice(-50);
+                localStorage.setItem('tournament-chat', JSON.stringify(chatMessages));
+            }
+            
+            // Limpiar datos corruptos del bracket si existen
+            const bracketData = localStorage.getItem('tournament-bracket');
+            if (bracketData) {
+                try {
+                    JSON.parse(bracketData);
+                } catch (e) {
+                    localStorage.removeItem('tournament-bracket');
+                    console.log('Datos de bracket corruptos eliminados');
+                }
+            }
+            
+            // Verificar consistencia de equipos
+            teams.forEach(team => {
+                if (!team.stats) {
+                    team.stats = { played: 0, won: 0, lost: 0, points: 0 };
+                }
+            });
+            localStorage.setItem('tournament-teams', JSON.stringify(teams));
+            
+            // Recargar interfaz
+            loadChatSidebar();
+            updateTournamentInfo();
+            
+            alert('✅ Almacenamiento optimizado correctamente.');
+        } catch (error) {
+            console.error('Error durante optimización:', error);
+            alert('❌ Error durante la optimización. Considera usar Limpieza de Emergencia.');
+        }
+    }
+}
+
 function generateBrackets() {
     const container = document.getElementById('brackets');
     if (!container) return;
@@ -892,10 +985,46 @@ function generateBrackets() {
                         <p style="margin-bottom: 0.8rem;"><strong>Juegos:</strong> Asignados aleatoriamente, sin repetir hasta usar todos.</p>
                     </div>
                 </div>
+
+                <!-- BOTONES DE CONTROL DEL TORNEO -->
+                <div class="tournament-control-buttons" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; margin: 2rem 0;">
+                    <!-- Botón Comenzar Torneo -->
+                    <button onclick="startTournament()" 
+                            class="btn btn-success tournament-control-btn" 
+                            id="start-tournament-btn"
+                            style="background: var(--success-color, #4caf50); color: white; border: none; padding: 0.8rem 1.5rem; border-radius: var(--border-radius); font-family: 'Press Start 2P', monospace; font-size: 10px; cursor: pointer; transition: all 0.3s ease; min-width: 140px;"
+                            ${teams.length < 2 ? 'disabled' : ''}>
+                        🚀 COMENZAR
+                    </button>
+
+                    <!-- Botón Reiniciar Torneo -->
+                    <button onclick="resetTournament()" 
+                            class="btn btn-warning tournament-control-btn" 
+                            id="reset-tournament-btn"
+                            style="background: var(--warning-color, #ff9800); color: white; border: none; padding: 0.8rem 1.5rem; border-radius: var(--border-radius); font-family: 'Press Start 2P', monospace; font-size: 10px; cursor: pointer; transition: all 0.3s ease; min-width: 140px;">
+                        🔄 REINICIAR
+                    </button>
+
+                    <!-- Botón Limpiar Datos -->
+                    <button onclick="cleanTournamentData()" 
+                            class="btn btn-secondary tournament-control-btn" 
+                            id="clean-data-btn"
+                            style="background: var(--secondary-color, #6c757d); color: white; border: none; padding: 0.8rem 1.5rem; border-radius: var(--border-radius); font-family: 'Press Start 2P', monospace; font-size: 10px; cursor: pointer; transition: all 0.3s ease; min-width: 140px;">
+                        🧹 LIMPIAR
+                    </button>
+
+                    <!-- Botón de Emergencia -->
+                    <button onclick="emergencyReset()" 
+                            class="btn btn-danger tournament-control-btn" 
+                            id="emergency-btn"
+                            style="background: var(--danger-color, #f44336); color: white; border: none; padding: 0.8rem 1.5rem; border-radius: var(--border-radius); font-family: 'Press Start 2P', monospace; font-size: 10px; cursor: pointer; transition: all 0.3s ease; min-width: 140px;">
+                        🚨 EMERGENCIA
+                    </button>
+                </div>
                 
                 ${teams.length >= 2 ? `
                     <div style="background: var(--bg-dark); padding: 1rem; border-radius: var(--border-radius); margin-top: 2rem;">
-                        <p style="color: var(--secondary-color);">Haz clic en "Comenzar Torneo" para generar el bracket</p>
+                        <p style="color: var(--secondary-color);">Haz clic en "COMENZAR" para generar el bracket</p>
                         <p style="font-size: 10px; opacity: 0.6; margin-top: 0.5rem;">
                             Con ${teams.length} equipos se generaran aproximadamente ${Math.ceil((teams.length - 1) + (teams.length - 2) + 1)} partidas
                         </p>
@@ -1002,17 +1131,35 @@ function updateTournamentControls() {
     
     updateFormVisibility();
     
+    // SIEMPRE mostrar los botones de control para evitar estados bloqueados
     if (startBtn) {
-        startBtn.style.display = tournamentState === 'preparing' ? 'inline-block' : 'none';
+        startBtn.style.display = 'inline-block';
         startBtn.disabled = teams.length < 2;
+        
+        // Cambiar texto según el estado
+        if (tournamentState === 'preparing') {
+            startBtn.innerHTML = '🚀 Comenzar Torneo';
+            startBtn.className = 'btn btn-success';
+        } else {
+            startBtn.innerHTML = '🔄 Reiniciar y Comenzar';
+            startBtn.className = 'btn btn-warning';
+        }
     }
     
     if (resetBtn) {
-        resetBtn.style.display = tournamentState !== 'preparing' ? 'inline-block' : 'none';
+        resetBtn.style.display = 'inline-block';
+        // Cambiar texto según el estado
+        if (tournamentState === 'preparing') {
+            resetBtn.innerHTML = '🧹 Limpiar Datos';
+            resetBtn.className = 'btn btn-secondary';
+        } else {
+            resetBtn.innerHTML = '🔄 Reiniciar Torneo';
+            resetBtn.className = 'btn btn-warning';
+        }
     }
     
     if (finalizeBtn) {
-        finalizeBtn.style.display = 'none';
+        finalizeBtn.style.display = tournamentState === 'active' ? 'inline-block' : 'none';
     }
 }
 
@@ -1032,8 +1179,10 @@ function updateFormVisibility() {
 // ===== GESTION DE EQUIPOS =====
 function registerTeam() {
     const teamName = document.getElementById('team-name').value.trim();
-    const player1 = document.getElementById('player1').value.trim();
-    const player2 = document.getElementById('player2').value.trim();
+    const player1 = document.getElementById('player1-name').value.trim();
+    const player2 = document.getElementById('player2-name').value.trim();
+    
+    console.log('registerTeam() - Datos:', { teamName, player1, player2 });
     
     if (!teamName || !player1 || !player2) {
         alert('Por favor completa todos los campos obligatorios');
@@ -1053,9 +1202,14 @@ function registerTeam() {
         photos: { team: null, player1: null, player2: null }
     };
     
+    console.log('registerTeam() - Nuevo equipo:', newTeam);
+    
     handleTeamPhotos(newTeam);
     teams.push(newTeam);
     localStorage.setItem('tournament-teams', JSON.stringify(teams));
+    
+    console.log('registerTeam() - Equipos después de agregar:', teams);
+    
     document.getElementById('team-form').reset();
     loadTeams();
     updateTournamentInfo();
@@ -1097,8 +1251,10 @@ function handleTeamPhotos(team) {
 }
 
 function loadTeams() {
-    const container = document.getElementById('teams-list');
+    const container = document.getElementById('registered-teams');
     if (!container) return;
+    
+    console.log('loadTeams() - Equipos actuales:', teams);
     
     if (teams.length === 0) {
         container.innerHTML = `
@@ -1167,7 +1323,7 @@ function removeTeam(teamId) {
 
 // ===== GESTION DE JUEGOS =====
 function loadGames() {
-    const container = document.getElementById('games-list');
+    const container = document.getElementById('games-grid');
     if (!container) return;
     
     let html = `
@@ -1536,5 +1692,138 @@ document.addEventListener('DOMContentLoaded', function() {
         alert('Error al cargar la aplicacion.');
     }
 });
+
+// ===== FUNCIONES DE CONTROL DEL TORNEO =====
+
+/**
+ * Función para limpiar datos del torneo de forma controlada
+ * Mantiene la configuración básica pero limpia resultados y estado
+ */
+function cleanTournamentData() {
+    // Confirmar acción con el usuario
+    const confirmClean = confirm(
+        '🧹 LIMPIAR DATOS DEL TORNEO\n\n' +
+        'Esta acción eliminará:\n' +
+        '• Resultados de partidas\n' +
+        '• Estado del torneo actual\n' +
+        '• Brackets generados\n\n' +
+        'SE MANTENDRÁN:\n' +
+        '• Equipos registrados\n' +
+        '• Juegos configurados\n' +
+        '• Mensajes del chat\n\n' +
+        '¿Continuar?'
+    );
+    
+    if (!confirmClean) return;
+    
+    try {
+        // Limpiar estado del torneo pero mantener datos básicos
+        tournamentState = 'preparing';
+        currentBracket = null;
+        bracketVisualizer = null;
+        
+        // Guardar cambios en localStorage
+        localStorage.setItem('tournament-state', tournamentState);
+        localStorage.removeItem('tournament-bracket');
+        localStorage.removeItem('tournament-bracket-visualizer');
+        
+        // Actualizar interfaz
+        updateTournamentStatus();
+        generateBrackets();
+        updateLeaderboard();
+        
+        // Notificar éxito
+        alert('✅ Datos del torneo limpiados correctamente\n\nEl torneo está listo para comenzar de nuevo');
+        
+        console.log('✅ Datos del torneo limpiados - Estado: preparing');
+        
+    } catch (error) {
+        console.error('❌ Error al limpiar datos:', error);
+        alert('❌ Error al limpiar los datos del torneo\n\nRevisa la consola para más detalles');
+    }
+}
+
+/**
+ * Función de emergencia para reseteo completo del sistema
+ * Elimina TODOS los datos y reinicia la aplicación
+ */
+function emergencyReset() {
+    // Doble confirmación para acción crítica
+    const firstConfirm = confirm(
+        '🚨 RESETEO DE EMERGENCIA 🚨\n\n' +
+        '⚠️ ADVERTENCIA: Esta acción es IRREVERSIBLE\n\n' +
+        'Se eliminarán TODOS los datos:\n' +
+        '• Equipos registrados\n' +
+        '• Juegos personalizados\n' +
+        '• Resultados y brackets\n' +
+        '• Mensajes del chat\n' +
+        '• Configuraciones\n\n' +
+        '¿Estás SEGURO de continuar?'
+    );
+    
+    if (!firstConfirm) return;
+    
+    const secondConfirm = confirm(
+        '🚨 CONFIRMACIÓN FINAL 🚨\n\n' +
+        'Esta es tu última oportunidad para cancelar.\n\n' +
+        'Se perderán TODOS los datos del torneo.\n\n' +
+        '¿Proceder con el reseteo de emergencia?'
+    );
+    
+    if (!secondConfirm) return;
+    
+    try {
+        // Limpiar completamente localStorage
+        const keysToRemove = [
+            'tournament-teams',
+            'tournament-games', 
+            'tournament-chat',
+            'tournament-state',
+            'tournament-bracket',
+            'tournament-bracket-visualizer'
+        ];
+        
+        keysToRemove.forEach(key => {
+            localStorage.removeItem(key);
+        });
+        
+        // Resetear variables globales a estado inicial
+        teams = [];
+        games = [
+            { id: 1, name: 'Mario Kart', emoji: '🏎️', rules: 'Carrera de 4 vueltas. Gana el primero en llegar a la meta.' },
+            { id: 2, name: 'Super Smash Bros', emoji: '👊', rules: 'Mejor de 3 rounds. Sin items. Escenarios neutrales.' },
+            { id: 3, name: 'Marvel vs Capcom 3', emoji: '⚡', rules: 'Mejor de 5 rounds. Equipos de 3 personajes.' },
+            { id: 4, name: 'Mario Party', emoji: '🎲', rules: '10 turnos. Gana quien tenga más estrellas al final.' },
+            { id: 5, name: 'Street Fighter', emoji: '🥊', rules: 'Mejor de 5 rounds. Sin super meter inicial.' },
+            { id: 6, name: 'Tekken 7', emoji: '🥋', rules: 'Mejor de 3 rounds. Sin rage arts iniciales.' },
+            { id: 7, name: 'Rocket League', emoji: '⚽', rules: '5 minutos. Gana quien tenga más goles.' }
+        ];
+        chatMessages = [];
+        tournamentState = 'preparing';
+        currentBracket = null;
+        bracketVisualizer = null;
+        
+        // Guardar estado inicial en localStorage
+        localStorage.setItem('tournament-games', JSON.stringify(games));
+        localStorage.setItem('tournament-state', tournamentState);
+        
+        // Recargar completamente la interfaz
+        loadTeams();
+        loadGames();
+        loadChatMessages();
+        updateTournamentStatus();
+        generateBrackets();
+        updateLeaderboard();
+        
+        // Notificar éxito
+        alert('🚨 RESETEO DE EMERGENCIA COMPLETADO 🚨\n\n✅ Todos los datos han sido eliminados\n✅ Sistema reiniciado correctamente\n\nLa aplicación está lista para usar desde cero');
+        
+        console.log('🚨 Reseteo de emergencia completado - Sistema reiniciado');
+        
+    } catch (error) {
+        console.error('❌ Error en reseteo de emergencia:', error);
+        alert('❌ Error durante el reseteo de emergencia\n\nPuede ser necesario limpiar manualmente el caché del navegador');
+    }
+}
 
 console.log('Sistema unificado cargado correctamente');
