@@ -41,12 +41,35 @@ class DoubleEliminationBracket {
         this.generateWinnersBracket(teamCount, winnersRounds);
         this.generateLosersBracket(winnersRounds);
         this.generateGrandFinals();
+        
+        // Conectar el último match de Winners con Grand Finals
+        if (this.winnersBracket.length > 0) {
+            const lastWinnersRound = this.winnersBracket[this.winnersBracket.length - 1];
+            if (lastWinnersRound.length > 0) {
+                const winnersFinalsMatch = lastWinnersRound[0];
+                winnersFinalsMatch.nextMatchId = this.grandFinals.id;
+                console.log(`🔗 Winners Finals (${winnersFinalsMatch.id}) conectado a Grand Finals (${this.grandFinals.id})`);
+            }
+        }
+        
+        // Conectar el último match de Losers con Grand Finals
+        if (this.losersBracket.length > 0) {
+            const lastLosersRound = this.losersBracket[this.losersBracket.length - 1];
+            if (lastLosersRound.length > 0) {
+                const losersFinalsMatch = lastLosersRound[lastLosersRound.length - 1];
+                losersFinalsMatch.nextMatchId = this.grandFinals.id;
+                console.log(`🔗 Losers Finals (${losersFinalsMatch.id}) conectado a Grand Finals (${this.grandFinals.id})`);
+            }
+        }
+        
+        console.log(`✅ Bracket generado: ${this.winnersBracket.length} rondas Winners, ${this.losersBracket.length} rondas Losers`);
     }
     
     generateWinnersBracket(teamCount, rounds) {
         const shuffledTeams = [...this.teams].sort(() => Math.random() - 0.5);
         const firstRoundMatches = [];
         
+        // Crear primera ronda del Winners Bracket
         for (let i = 0; i < shuffledTeams.length; i += 2) {
             if (i + 1 < shuffledTeams.length) {
                 firstRoundMatches.push({
@@ -65,20 +88,32 @@ class DoubleEliminationBracket {
             }
         }
         
+        // Si hay número impar de equipos, el último pasa automáticamente
+        if (shuffledTeams.length % 2 !== 0) {
+            const byeTeam = shuffledTeams[shuffledTeams.length - 1];
+            console.log(`🎯 ${byeTeam.name} pasa automáticamente en Winners R1`);
+        }
+        
         this.winnersBracket.push(firstRoundMatches);
         
-        for (let round = 2; round <= rounds; round++) {
+        // Crear rondas subsecuentes del Winners Bracket
+        let currentTeamsCount = Math.floor(shuffledTeams.length / 2) + (shuffledTeams.length % 2);
+        
+        for (let round = 2; round <= rounds && currentTeamsCount > 1; round++) {
             const roundMatches = [];
             const previousRoundMatches = this.winnersBracket[round - 2];
+            const teamsFromPreviousRound = previousRoundMatches.length;
+            const byeTeam = shuffledTeams.length % 2 !== 0 && round === 2 ? shuffledTeams[shuffledTeams.length - 1] : null;
             
-            for (let i = 0; i < previousRoundMatches.length; i += 2) {
-                if (i + 1 < previousRoundMatches.length) {
+            // Crear matches para ganadores de la ronda anterior
+            for (let i = 0; i < teamsFromPreviousRound; i += 2) {
+                if (i + 1 < teamsFromPreviousRound) {
                     const match = {
                         id: this.matchIdCounter++,
                         bracket: 'winners',
                         round: round,
-                        team1: null,
-                        team2: null,
+                        team1: null, // Se llenará con ganador de previousRoundMatches[i]
+                        team2: null, // Se llenará con ganador de previousRoundMatches[i + 1]
                         winner: null,
                         loser: null,
                         game: this.getNextGame(),
@@ -88,77 +123,192 @@ class DoubleEliminationBracket {
                         dependsOn: [previousRoundMatches[i].id, previousRoundMatches[i + 1].id]
                     };
                     roundMatches.push(match);
+                    
+                    // Conectar matches anteriores con este match
                     previousRoundMatches[i].nextMatchId = match.id;
                     previousRoundMatches[i + 1].nextMatchId = match.id;
+                } else if (byeTeam && round === 2) {
+                    // El equipo bye se enfrenta al ganador del último match
+                    const match = {
+                        id: this.matchIdCounter++,
+                        bracket: 'winners',
+                        round: round,
+                        team1: byeTeam, // Equipo que pasó automáticamente
+                        team2: null, // Se llenará con ganador de previousRoundMatches[i]
+                        winner: null,
+                        loser: null,
+                        game: this.getNextGame(),
+                        completed: false,
+                        nextMatchId: null,
+                        loserNextMatchId: null,
+                        dependsOn: [previousRoundMatches[i].id]
+                    };
+                    roundMatches.push(match);
+                    previousRoundMatches[i].nextMatchId = match.id;
                 }
             }
             
             if (roundMatches.length > 0) {
                 this.winnersBracket.push(roundMatches);
+                currentTeamsCount = Math.ceil(currentTeamsCount / 2);
             }
         }
     }
     
     generateLosersBracket(winnersRounds) {
-        let losersRound = 1;
-        const firstWinnersRound = this.winnersBracket[0];
-        const firstLosersRoundMatches = [];
+        if (this.winnersBracket.length === 0) return;
         
-        for (let i = 0; i < firstWinnersRound.length; i += 2) {
-            if (i + 1 < firstWinnersRound.length) {
-                const match = {
+        console.log(`🔄 Generando Losers Bracket para ${winnersRounds} rondas de Winners`);
+        
+        // El Losers Bracket tiene una estructura específica:
+        // - Rondas impares: perdedores de Winners compiten entre ellos
+        // - Rondas pares: ganadores de ronda anterior vs nuevos perdedores de Winners
+        
+        let losersRoundNumber = 1;
+        
+        // RONDA 1 DE LOSERS: Perdedores de Winners R1 compiten entre ellos
+        const firstWinnersRound = this.winnersBracket[0];
+        if (firstWinnersRound.length > 1) {
+            const losersR1Matches = [];
+            
+            // Emparejar perdedores de Winners R1
+            for (let i = 0; i < firstWinnersRound.length; i += 2) {
+                if (i + 1 < firstWinnersRound.length) {
+                    const losersMatch = {
+                        id: this.matchIdCounter++,
+                        bracket: 'losers',
+                        round: losersRoundNumber,
+                        team1: null, // Perdedor de firstWinnersRound[i]
+                        team2: null, // Perdedor de firstWinnersRound[i + 1]
+                        winner: null,
+                        loser: null,
+                        game: this.getNextGame(),
+                        completed: false,
+                        nextMatchId: null,
+                        dependsOn: [firstWinnersRound[i].id, firstWinnersRound[i + 1].id],
+                        dependsOnLosers: true
+                    };
+                    losersR1Matches.push(losersMatch);
+                    
+                    // Conectar Winners matches con este Losers match
+                    firstWinnersRound[i].loserNextMatchId = losersMatch.id;
+                    firstWinnersRound[i + 1].loserNextMatchId = losersMatch.id;
+                }
+            }
+            
+            // Si hay un número impar de perdedores, el último espera
+            if (firstWinnersRound.length % 2 !== 0) {
+                const waitingMatch = {
                     id: this.matchIdCounter++,
                     bracket: 'losers',
-                    round: losersRound,
-                    team1: null,
-                    team2: null,
+                    round: losersRoundNumber,
+                    team1: null, // Perdedor del último match de Winners R1
+                    team2: null, // Esperará al ganador de la siguiente ronda
                     winner: null,
                     loser: null,
                     game: this.getNextGame(),
                     completed: false,
                     nextMatchId: null,
-                    dependsOn: [firstWinnersRound[i].id, firstWinnersRound[i + 1].id],
-                    dependsOnLosers: true
+                    dependsOn: [firstWinnersRound[firstWinnersRound.length - 1].id],
+                    dependsOnLosers: true,
+                    isWaitingMatch: true
                 };
-                firstLosersRoundMatches.push(match);
-                firstWinnersRound[i].loserNextMatchId = match.id;
-                firstWinnersRound[i + 1].loserNextMatchId = match.id;
+                losersR1Matches.push(waitingMatch);
+                firstWinnersRound[firstWinnersRound.length - 1].loserNextMatchId = waitingMatch.id;
             }
+            
+            this.losersBracket.push(losersR1Matches);
+            losersRoundNumber++;
+            console.log(`   L-R1: ${losersR1Matches.length} matches creados`);
         }
         
-        if (firstLosersRoundMatches.length > 0) {
-            this.losersBracket.push(firstLosersRoundMatches);
-            losersRound++;
-        }
-        
+        // RONDAS SUBSECUENTES DEL LOSERS BRACKET
         for (let winnersRoundIndex = 1; winnersRoundIndex < this.winnersBracket.length; winnersRoundIndex++) {
             const winnersRound = this.winnersBracket[winnersRoundIndex];
-            const losersRoundMatches = [];
+            const previousLosersRound = this.losersBracket[this.losersBracket.length - 1];
             
-            winnersRound.forEach(winnersMatch => {
-                const match = {
+            // RONDA PAR DE LOSERS: Ganadores de Losers anterior vs Perdedores de Winners actual
+            const currentLosersRound = [];
+            
+            // Emparejar ganadores de la ronda anterior de Losers con perdedores de Winners
+            const winnersLosers = winnersRound.length; // Número de perdedores que vendrán de Winners
+            const losersWinners = previousLosersRound.length; // Número de ganadores de Losers anterior
+            
+            // Crear matches combinando ambos grupos
+            const totalMatches = Math.max(winnersLosers, losersWinners);
+            
+            for (let i = 0; i < totalMatches; i++) {
+                const losersMatch = {
                     id: this.matchIdCounter++,
                     bracket: 'losers',
-                    round: losersRound,
-                    team1: null,
-                    team2: null,
+                    round: losersRoundNumber,
+                    team1: null, // Se llenará con ganador de Losers anterior o perdedor de Winners
+                    team2: null, // Se llenará con el otro
                     winner: null,
                     loser: null,
                     game: this.getNextGame(),
                     completed: false,
                     nextMatchId: null,
-                    dependsOn: [winnersMatch.id],
+                    dependsOn: [],
                     dependsOnLosers: true
                 };
-                losersRoundMatches.push(match);
-                winnersMatch.loserNextMatchId = match.id;
-            });
+                
+                // Conectar con match de Winners correspondiente
+                if (i < winnersRound.length) {
+                    winnersRound[i].loserNextMatchId = losersMatch.id;
+                    losersMatch.dependsOn.push(winnersRound[i].id);
+                }
+                
+                // Conectar con match de Losers anterior correspondiente
+                if (i < previousLosersRound.length) {
+                    previousLosersRound[i].nextMatchId = losersMatch.id;
+                    losersMatch.dependsOn.push(previousLosersRound[i].id);
+                }
+                
+                currentLosersRound.push(losersMatch);
+            }
             
-            if (losersRoundMatches.length > 0) {
-                this.losersBracket.push(losersRoundMatches);
-                losersRound++;
+            this.losersBracket.push(currentLosersRound);
+            console.log(`   L-R${losersRoundNumber}: ${currentLosersRound.length} matches creados`);
+            losersRoundNumber++;
+            
+            // Si hay más de un match en esta ronda de Losers, crear la siguiente ronda
+            if (currentLosersRound.length > 1) {
+                const nextLosersRound = [];
+                
+                // Emparejar ganadores de la ronda actual
+                for (let i = 0; i < currentLosersRound.length; i += 2) {
+                    if (i + 1 < currentLosersRound.length) {
+                        const nextMatch = {
+                            id: this.matchIdCounter++,
+                            bracket: 'losers',
+                            round: losersRoundNumber,
+                            team1: null,
+                            team2: null,
+                            winner: null,
+                            loser: null,
+                            game: this.getNextGame(),
+                            completed: false,
+                            nextMatchId: null,
+                            dependsOn: [currentLosersRound[i].id, currentLosersRound[i + 1].id],
+                            dependsOnLosers: true
+                        };
+                        nextLosersRound.push(nextMatch);
+                        
+                        currentLosersRound[i].nextMatchId = nextMatch.id;
+                        currentLosersRound[i + 1].nextMatchId = nextMatch.id;
+                    }
+                }
+                
+                if (nextLosersRound.length > 0) {
+                    this.losersBracket.push(nextLosersRound);
+                    console.log(`   L-R${losersRoundNumber}: ${nextLosersRound.length} matches creados`);
+                    losersRoundNumber++;
+                }
             }
         }
+        
+        console.log(`✅ Losers Bracket completado: ${this.losersBracket.length} rondas`);
     }
     
     generateGrandFinals() {
@@ -166,21 +316,22 @@ class DoubleEliminationBracket {
             id: this.matchIdCounter++,
             bracket: 'grand-finals',
             round: 1,
-            team1: null,
-            team2: null,
+            team1: null, // Se llenará con el ganador de Winners
+            team2: null, // Se llenará with el ganador de Losers
             winner: null,
             loser: null,
             game: this.getNextGame(),
             completed: false,
-            isGrandFinals: true
+            isGrandFinals: true,
+            nextMatchId: null // Podría conectar a Grand Finals Reset
         };
         
         this.grandFinalsReset = {
             id: this.matchIdCounter++,
             bracket: 'grand-finals-reset',
             round: 2,
-            team1: null,
-            team2: null,
+            team1: null, // Se llenará si es necesario
+            team2: null, // Se llenará si es necesario
             winner: null,
             loser: null,
             game: this.getNextGame(),
@@ -188,6 +339,12 @@ class DoubleEliminationBracket {
             isGrandFinalsReset: true,
             dependsOn: [this.grandFinals.id]
         };
+        
+        // Conectar Grand Finals con Grand Finals Reset si es necesario
+        this.grandFinals.nextMatchId = this.grandFinalsReset.id;
+        
+        console.log(`🏆 Grand Finals creado: Match ${this.grandFinals.id}`);
+        console.log(`🔄 Grand Finals Reset creado: Match ${this.grandFinalsReset.id}`);
     }
     
     getNextGame() {
@@ -244,48 +401,244 @@ class DoubleEliminationBracket {
     }
     
     processMatchResult(matchId, winnerId) {
-        const allMatches = this.getAllMatches();
-        const match = allMatches.find(m => m.id === matchId);
+        // Buscar el match en los brackets originales, no en copias
+        let match = null;
+        let matchLocation = null;
         
-        if (!match || match.completed) return false;
+        // Buscar en Winners Bracket
+        for (let roundIndex = 0; roundIndex < this.winnersBracket.length; roundIndex++) {
+            const foundMatch = this.winnersBracket[roundIndex].find(m => m.id === matchId);
+            if (foundMatch) {
+                match = foundMatch;
+                matchLocation = { bracket: 'winners', round: roundIndex };
+                break;
+            }
+        }
         
+        // Buscar en Losers Bracket si no se encontró
+        if (!match) {
+            for (let roundIndex = 0; roundIndex < this.losersBracket.length; roundIndex++) {
+                const foundMatch = this.losersBracket[roundIndex].find(m => m.id === matchId);
+                if (foundMatch) {
+                    match = foundMatch;
+                    matchLocation = { bracket: 'losers', round: roundIndex };
+                    break;
+                }
+            }
+        }
+        
+        // Buscar en Grand Finals si no se encontró
+        if (!match && this.grandFinals && this.grandFinals.id === matchId) {
+            match = this.grandFinals;
+            matchLocation = { bracket: 'grand-finals' };
+        }
+        
+        // Buscar en Grand Finals Reset si no se encontró
+        if (!match && this.grandFinalsReset && this.grandFinalsReset.id === matchId) {
+            match = this.grandFinalsReset;
+            matchLocation = { bracket: 'grand-finals-reset' };
+        }
+        
+        if (!match || match.completed) {
+            console.error('Match no encontrado o ya completado:', matchId);
+            return false;
+        }
+        
+        // Validar que ambos equipos estén presentes
+        if (!match.team1 || !match.team2) {
+            console.error('Match incompleto - faltan equipos:', match);
+            return false;
+        }
+        
+        // Determinar ganador y perdedor
         const winner = match.team1.id === winnerId ? match.team1 : match.team2;
         const loser = match.team1.id === winnerId ? match.team2 : match.team1;
         
+        // Actualizar el match original
         match.winner = winner;
         match.loser = loser;
         match.completed = true;
+        match.completedAt = new Date().toISOString();
         
+        console.log(`✅ Match completado: ${winner.name} venció a ${loser.name}`);
+        
+        // Actualizar estadísticas de equipos
         this.updateTeamStats(winner, loser);
+        
+        // Avanzar equipos a siguientes matches
         this.advanceTeams(match);
         
         return true;
     }
     
     advanceTeams(completedMatch) {
-        const allMatches = this.getAllMatches();
+        console.log(`🔄 Avanzando equipos del match ${completedMatch.id} (${completedMatch.bracket})`);
+        console.log(`   Ganador: ${completedMatch.winner.name}`);
+        console.log(`   Perdedor: ${completedMatch.loser.name}`);
         
+        // Avanzar ganador al siguiente match
         if (completedMatch.nextMatchId) {
-            const nextMatch = allMatches.find(m => m.id === completedMatch.nextMatchId);
+            const nextMatch = this.findMatchById(completedMatch.nextMatchId);
             if (nextMatch) {
+                // Determinar en qué slot colocar al ganador
                 if (!nextMatch.team1) {
                     nextMatch.team1 = completedMatch.winner;
+                    console.log(`   ➡️ ${completedMatch.winner.name} avanza como team1 al match ${nextMatch.id} (${nextMatch.bracket})`);
                 } else if (!nextMatch.team2) {
                     nextMatch.team2 = completedMatch.winner;
+                    console.log(`   ➡️ ${completedMatch.winner.name} avanza como team2 al match ${nextMatch.id} (${nextMatch.bracket})`);
+                } else {
+                    console.warn(`   ⚠️ Match ${nextMatch.id} ya está lleno, no se puede avanzar ${completedMatch.winner.name}`);
+                }
+            } else {
+                console.warn(`   ⚠️ No se encontró el match ${completedMatch.nextMatchId} para avanzar ${completedMatch.winner.name}`);
+            }
+        }
+        
+        // Avanzar perdedor al losers bracket (solo si viene de winners bracket)
+        if (completedMatch.bracket === 'winners' && completedMatch.loserNextMatchId) {
+            const loserMatch = this.findMatchById(completedMatch.loserNextMatchId);
+            if (loserMatch) {
+                // Lógica especial para colocar perdedores en Losers Bracket
+                if (this.shouldPlaceInTeam1(loserMatch, completedMatch)) {
+                    loserMatch.team1 = completedMatch.loser;
+                    console.log(`   ⬇️ ${completedMatch.loser.name} va al losers bracket como team1 al match ${loserMatch.id}`);
+                } else if (!loserMatch.team2) {
+                    loserMatch.team2 = completedMatch.loser;
+                    console.log(`   ⬇️ ${completedMatch.loser.name} va al losers bracket como team2 al match ${loserMatch.id}`);
+                } else {
+                    console.warn(`   ⚠️ Losers match ${loserMatch.id} ya está lleno, no se puede avanzar ${completedMatch.loser.name}`);
+                }
+            } else {
+                console.warn(`   ⚠️ No se encontró el losers match ${completedMatch.loserNextMatchId} para ${completedMatch.loser.name}`);
+            }
+        } else if (completedMatch.bracket === 'losers') {
+            console.log(`   ❌ ${completedMatch.loser.name} es eliminado del torneo`);
+        }
+        
+        // Verificar si se completó el torneo
+        this.checkTournamentCompletion();
+    }
+    
+    // Método auxiliar para determinar dónde colocar un perdedor en Losers Bracket
+    shouldPlaceInTeam1(loserMatch, completedMatch) {
+        // Si team1 está vacío, colocar ahí
+        if (!loserMatch.team1) return true;
+        
+        // Si team1 ya está ocupado pero team2 está vacío, colocar en team2
+        if (loserMatch.team1 && !loserMatch.team2) return false;
+        
+        // Si ambos están ocupados, hay un problema
+        return false;
+    }
+    
+    checkTournamentCompletion() {
+        // Verificar si Grand Finals está completado
+        if (this.grandFinals && this.grandFinals.completed) {
+            const grandFinalsWinner = this.grandFinals.winner;
+            const winnersChampion = this.getWinnersChampion();
+            const losersChampion = this.getLosersChampion();
+            
+            console.log(`🏆 Grand Finals completado:`);
+            console.log(`   Ganador: ${grandFinalsWinner.name}`);
+            console.log(`   Campeón Winners: ${winnersChampion?.name}`);
+            console.log(`   Campeón Losers: ${losersChampion?.name}`);
+            
+            // Si el ganador de Grand Finals es el campeón de Winners (no perdió ninguna partida)
+            if (grandFinalsWinner.id === winnersChampion?.id) {
+                console.log(`🏆 Torneo completado! Ganador: ${grandFinalsWinner.name}`);
+                this.showTournamentWinner(grandFinalsWinner);
+                return;
+            }
+            
+            // Si el ganador de Grand Finals es el campeón de Losers, necesitamos Grand Finals Reset
+            if (grandFinalsWinner.id === losersChampion?.id) {
+                if (!this.grandFinalsReset.completed) {
+                    // Configurar Grand Finals Reset
+                    this.grandFinalsReset.team1 = winnersChampion;
+                    this.grandFinalsReset.team2 = grandFinalsWinner;
+                    console.log(`🔄 Grand Finals Reset necesario: ${winnersChampion.name} vs ${grandFinalsWinner.name}`);
+                    console.log(`   Razón: El equipo de Losers (${grandFinalsWinner.name}) ganó Grand Finals`);
+                    return;
+                } else {
+                    // Grand Finals Reset completado
+                    console.log(`🏆 Torneo completado! Ganador: ${this.grandFinalsReset.winner.name}`);
+                    this.showTournamentWinner(this.grandFinalsReset.winner);
+                    return;
                 }
             }
         }
         
-        if (completedMatch.loserNextMatchId) {
-            const loserMatch = allMatches.find(m => m.id === completedMatch.loserNextMatchId);
-            if (loserMatch) {
-                if (!loserMatch.team1) {
-                    loserMatch.team1 = completedMatch.loser;
-                } else if (!loserMatch.team2) {
-                    loserMatch.team2 = completedMatch.loser;
-                }
-            }
+        // Verificar si Grand Finals Reset está completado
+        if (this.grandFinalsReset && this.grandFinalsReset.completed) {
+            console.log(`🏆 Torneo completado! Ganador: ${this.grandFinalsReset.winner.name}`);
+            this.showTournamentWinner(this.grandFinalsReset.winner);
         }
+    }
+    
+    showTournamentWinner(winner) {
+        // Actualizar estado del torneo
+        tournamentState = 'finished';
+        localStorage.setItem('tournament-state', tournamentState);
+        
+        // Guardar datos de finalización
+        const finishData = {
+            winner: winner,
+            finishedAt: new Date().toISOString(),
+            totalTeams: teams.length,
+            totalMatches: this.getAllMatches().filter(m => m.completed).length
+        };
+        localStorage.setItem('tournament-finish-data', JSON.stringify(finishData));
+        
+        // Mostrar modal de celebración
+        showWinnerModal(winner);
+        
+        // Actualizar interfaz
+        updateTournamentControls();
+        updateLeaderboard();
+    }
+    
+    getWinnersChampion() {
+        if (this.winnersBracket.length === 0) return null;
+        const finalRound = this.winnersBracket[this.winnersBracket.length - 1];
+        if (finalRound.length === 0) return null;
+        const finalMatch = finalRound[0];
+        return finalMatch.completed ? finalMatch.winner : null;
+    }
+    
+    getLosersChampion() {
+        if (this.losersBracket.length === 0) return null;
+        const finalRound = this.losersBracket[this.losersBracket.length - 1];
+        if (finalRound.length === 0) return null;
+        const finalMatch = finalRound[0];
+        return finalMatch.completed ? finalMatch.winner : null;
+    }
+    
+    // Método auxiliar para encontrar un match por ID en todos los brackets
+    findMatchById(matchId) {
+        // Buscar en Winners Bracket
+        for (let round of this.winnersBracket) {
+            const match = round.find(m => m.id === matchId);
+            if (match) return match;
+        }
+        
+        // Buscar en Losers Bracket
+        for (let round of this.losersBracket) {
+            const match = round.find(m => m.id === matchId);
+            if (match) return match;
+        }
+        
+        // Buscar en Grand Finals
+        if (this.grandFinals && this.grandFinals.id === matchId) {
+            return this.grandFinals;
+        }
+        
+        // Buscar en Grand Finals Reset
+        if (this.grandFinalsReset && this.grandFinalsReset.id === matchId) {
+            return this.grandFinalsReset;
+        }
+        
+        return null;
     }
     
     updateTeamStats(winner, loser) {
@@ -571,12 +924,23 @@ class BracketVisualizer {
             <div class="bracket-section">
                 <div class="bracket-title">Winners Bracket</div>
                 <div class="bracket-rounds">
-                    ${winnersBracket.map((round, roundIndex) => `
-                        <div class="bracket-round">
-                            <div class="round-title">Winners R${roundIndex + 1}</div>
-                            ${round.map(match => this.renderMatch(match, `W${roundIndex + 1}`)).join('')}
-                        </div>
-                    `).join('')}
+                    ${winnersBracket.map((round, roundIndex) => {
+                        let roundTitle = '';
+                        if (roundIndex === winnersBracket.length - 1) {
+                            roundTitle = 'Winners Finals';
+                        } else if (roundIndex === winnersBracket.length - 2 && winnersBracket.length > 2) {
+                            roundTitle = 'Winners Semifinals';
+                        } else {
+                            roundTitle = `Winners R${roundIndex + 1}`;
+                        }
+                        
+                        return `
+                            <div class="bracket-round">
+                                <div class="round-title">${roundTitle}</div>
+                                ${round.map(match => this.renderMatch(match, roundTitle)).join('')}
+                            </div>
+                        `;
+                    }).join('')}
                 </div>
             </div>
         `;
@@ -589,19 +953,58 @@ class BracketVisualizer {
             <div class="bracket-section">
                 <div class="bracket-title">Losers Bracket</div>
                 <div class="bracket-rounds">
-                    ${losersBracket.map((round, roundIndex) => `
-                        <div class="bracket-round">
-                            <div class="round-title">Losers R${roundIndex + 1}</div>
-                            ${round.map(match => this.renderMatch(match, `L${roundIndex + 1}`)).join('')}
-                        </div>
-                    `).join('')}
+                    ${losersBracket.map((round, roundIndex) => {
+                        let roundTitle = '';
+                        
+                        if (roundIndex === losersBracket.length - 1) {
+                            roundTitle = 'Losers Finals';
+                        } else if (roundIndex === losersBracket.length - 2 && losersBracket.length > 2) {
+                            roundTitle = 'Losers Semifinals';
+                        } else if (roundIndex === 0) {
+                            roundTitle = 'Losers R1';
+                        } else {
+                            // Para rondas intermedias, usar numeración específica
+                            roundTitle = `Losers R${roundIndex + 1}`;
+                        }
+                        
+                        return `
+                            <div class="bracket-round">
+                                <div class="round-title">${roundTitle}</div>
+                                <div class="round-description" style="font-size: 0.6rem; color: var(--text-light); margin-bottom: 0.5rem; text-align: center;">
+                                    ${this.getRoundDescription(roundIndex, losersBracket.length)}
+                                </div>
+                                ${round.map(match => this.renderMatch(match, roundTitle)).join('')}
+                            </div>
+                        `;
+                    }).join('')}
                 </div>
             </div>
         `;
     }
     
+    getRoundDescription(roundIndex, totalRounds) {
+        if (roundIndex === 0) {
+            return 'Perdedores de Winners R1';
+        } else if (roundIndex === totalRounds - 1) {
+            return 'Última oportunidad';
+        } else if (roundIndex % 2 === 1) {
+            return `Perdedores de Winners R${Math.ceil((roundIndex + 1) / 2) + 1} vs Ganadores anteriores`;
+        } else {
+            return 'Ganadores de ronda anterior';
+        }
+    }
+    
     renderGrandFinals(grandFinals, grandFinalsReset) {
         if (!grandFinals) return '';
+        
+        // Solo mostrar Grand Finals Reset si:
+        // 1. Grand Finals está completado
+        // 2. El ganador de Grand Finals vino del Losers Bracket
+        // 3. Grand Finals Reset tiene equipos asignados
+        const shouldShowReset = grandFinalsReset && 
+                               grandFinals.completed && 
+                               grandFinalsReset.team1 && 
+                               grandFinalsReset.team2;
         
         return `
             <div class="bracket-section grand-finals">
@@ -611,9 +1014,12 @@ class BracketVisualizer {
                         <div class="round-title">Grand Finals</div>
                         ${this.renderMatch(grandFinals, 'GF')}
                     </div>
-                    ${grandFinalsReset ? `
+                    ${shouldShowReset ? `
                         <div class="bracket-round">
                             <div class="round-title">Grand Finals Reset</div>
+                            <div style="font-size: 0.7rem; color: var(--secondary-color); margin-bottom: 0.5rem; text-align: center;">
+                                El equipo de Losers ganó Grand Finals
+                            </div>
                             ${this.renderMatch(grandFinalsReset, 'GF Reset')}
                         </div>
                     ` : ''}
@@ -717,6 +1123,261 @@ function declareMatchWinner(matchId, winnerId) {
         }
     }
 }
+
+/**
+ * Muestra un modal de celebración para el ganador del torneo
+ */
+function showWinnerModal(winner) {
+    // Crear el modal
+    const modal = document.createElement('div');
+    modal.id = 'winner-modal';
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+        animation: fadeIn 0.5s ease-in-out;
+    `;
+    
+    // Obtener foto del equipo
+    const teamPhoto = winner.photos && winner.photos.team 
+        ? `<img src="${winner.photos.team}" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 4px solid var(--accent-color); margin-bottom: 1rem;">`
+        : '<div style="width: 120px; height: 120px; border-radius: 50%; background: linear-gradient(45deg, var(--primary-color), var(--secondary-color)); display: flex; align-items: center; justify-content: center; font-size: 60px; margin-bottom: 1rem; border: 4px solid var(--accent-color);">🏆</div>';
+    
+    // Contenido del modal
+    modal.innerHTML = `
+        <div style="
+            background: linear-gradient(135deg, var(--bg-dark) 0%, var(--bg-medium) 100%);
+            padding: 3rem;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+            border: 3px solid var(--accent-color);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            position: relative;
+            overflow: hidden;
+            animation: modalSlideIn 0.6s ease-out;
+        ">
+            <!-- Efectos de fondo -->
+            <div style="
+                position: absolute;
+                top: -50%;
+                left: -50%;
+                width: 200%;
+                height: 200%;
+                background: radial-gradient(circle, rgba(255,204,2,0.1) 0%, transparent 70%);
+                animation: rotate 10s linear infinite;
+                pointer-events: none;
+            "></div>
+            
+            <!-- Contenido principal -->
+            <div style="position: relative; z-index: 2;">
+                <h1 style="
+                    color: var(--accent-color);
+                    font-size: 2rem;
+                    margin-bottom: 1rem;
+                    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+                    animation: bounce 1s ease-in-out infinite alternate;
+                ">🏆 ¡CAMPEÓN! 🏆</h1>
+                
+                ${teamPhoto}
+                
+                <h2 style="
+                    color: var(--primary-color);
+                    font-size: 1.5rem;
+                    margin-bottom: 0.5rem;
+                    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+                ">${winner.name}</h2>
+                
+                <p style="
+                    color: var(--secondary-color);
+                    font-size: 1rem;
+                    margin-bottom: 2rem;
+                    opacity: 0.9;
+                ">${winner.players.join(' & ')}</p>
+                
+                <div style="
+                    background: var(--bg-light);
+                    padding: 1rem;
+                    border-radius: 10px;
+                    margin-bottom: 2rem;
+                    border: 1px solid var(--secondary-color);
+                ">
+                    <h3 style="color: var(--accent-color); margin-bottom: 0.5rem;">📊 Estadísticas Finales</h3>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; font-size: 0.9rem;">
+                        <div>🎮 Partidas: <strong>${winner.stats.played}</strong></div>
+                        <div>🏆 Victorias: <strong>${winner.stats.won}</strong></div>
+                        <div>💔 Derrotas: <strong>${winner.stats.lost}</strong></div>
+                        <div>⭐ Puntos: <strong>${winner.stats.points}</strong></div>
+                    </div>
+                </div>
+                
+                <button onclick="closeWinnerModal()" style="
+                    background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+                    color: white;
+                    border: none;
+                    padding: 1rem 2rem;
+                    border-radius: 25px;
+                    font-family: 'Press Start 2P', monospace;
+                    font-size: 0.8rem;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+                " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    🎉 ¡GENIAL!
+                </button>
+            </div>
+        </div>
+    `;
+    
+    // Agregar estilos de animación
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes modalSlideIn {
+            from { 
+                opacity: 0;
+                transform: translateY(-50px) scale(0.8);
+            }
+            to { 
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        
+        @keyframes bounce {
+            from { transform: translateY(0px); }
+            to { transform: translateY(-10px); }
+        }
+        
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        @keyframes confetti-fall {
+            0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+        
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            z-index: 9999;
+            pointer-events: none;
+        }
+    `;
+    document.head.appendChild(style);
+    
+    // Agregar modal al DOM
+    document.body.appendChild(modal);
+    
+    // Iniciar animación de confetti
+    startConfetti();
+    
+    // Auto-cerrar después de 10 segundos
+    setTimeout(() => {
+        if (document.getElementById('winner-modal')) {
+            closeWinnerModal();
+        }
+    }, 10000);
+}
+
+/**
+ * Cierra el modal de celebración
+ */
+function closeWinnerModal() {
+    const modal = document.getElementById('winner-modal');
+    if (modal) {
+        modal.style.animation = 'fadeOut 0.3s ease-in-out';
+        setTimeout(() => {
+            modal.remove();
+            stopConfetti();
+        }, 300);
+    }
+}
+
+/**
+ * Inicia la animación de confetti
+ */
+function startConfetti() {
+    const colors = ['#ff6b35', '#f7931e', '#ffcc02', '#4caf50', '#2196f3', '#9c27b0'];
+    const confettiCount = 50;
+    
+    for (let i = 0; i < confettiCount; i++) {
+        setTimeout(() => {
+            createConfettiPiece(colors[Math.floor(Math.random() * colors.length)]);
+        }, i * 100);
+    }
+    
+    // Continuar creando confetti cada 2 segundos
+    window.confettiInterval = setInterval(() => {
+        for (let i = 0; i < 10; i++) {
+            createConfettiPiece(colors[Math.floor(Math.random() * colors.length)]);
+        }
+    }, 2000);
+}
+
+/**
+ * Detiene la animación de confetti
+ */
+function stopConfetti() {
+    if (window.confettiInterval) {
+        clearInterval(window.confettiInterval);
+        window.confettiInterval = null;
+    }
+    
+    // Limpiar confetti existente
+    setTimeout(() => {
+        const confettiPieces = document.querySelectorAll('.confetti');
+        confettiPieces.forEach(piece => piece.remove());
+    }, 3000);
+}
+
+/**
+ * Crea una pieza individual de confetti
+ */
+function createConfettiPiece(color) {
+    const confetti = document.createElement('div');
+    confetti.className = 'confetti';
+    confetti.style.cssText = `
+        background: ${color};
+        left: ${Math.random() * 100}%;
+        animation: confetti-fall ${3 + Math.random() * 2}s linear forwards;
+        border-radius: ${Math.random() > 0.5 ? '50%' : '0'};
+    `;
+    
+    document.body.appendChild(confetti);
+    
+    // Limpiar después de la animación
+    setTimeout(() => {
+        if (confetti.parentNode) {
+            confetti.remove();
+        }
+    }, 5000);
+}
+
+// Agregar estilo fadeOut para el cierre del modal
+const fadeOutStyle = document.createElement('style');
+fadeOutStyle.textContent = `
+    @keyframes fadeOut {
+        from { opacity: 1; }
+        to { opacity: 0; }
+    }
+`;
+document.head.appendChild(fadeOutStyle);
 // ===== FUNCIONES AUXILIARES =====
 function getTeamById(id) {
     return teams.find(team => team.id === id);
@@ -883,6 +1544,100 @@ function resetTournament() {
         updateLeaderboard();
         
         alert('Torneo reiniciado correctamente');
+    }
+}
+
+/**
+ * Finaliza el torneo actual y marca el estado como terminado
+ */
+function finalizeTournament() {
+    if (!currentBracket) {
+        alert('⚠️ No hay torneo activo para finalizar');
+        return;
+    }
+    
+    const confirmMessage = '🏆 FINALIZAR TORNEO 🏆\n\n' +
+        'Esta acción marcará el torneo como terminado.\n' +
+        'Los resultados se mantendrán para consulta.\n\n' +
+        '¿Confirmar finalización del torneo?';
+    
+    if (confirm(confirmMessage)) {
+        tournamentState = 'finished';
+        localStorage.setItem('tournament-state', tournamentState);
+        
+        // Guardar timestamp de finalización
+        const finishData = {
+            finishedAt: new Date().toISOString(),
+            totalTeams: teams.length,
+            totalMatches: currentBracket ? currentBracket.getAllMatches().filter(m => m.completed).length : 0
+        };
+        localStorage.setItem('tournament-finish-data', JSON.stringify(finishData));
+        
+        updateTournamentInfo();
+        updateTournamentControls();
+        generateBrackets();
+        updateLeaderboard();
+        
+        alert('🎉 ¡Torneo finalizado exitosamente!\n\n' +
+              'Los resultados han sido guardados.\n' +
+              'Puedes consultar la clasificación final en cualquier momento.');
+    }
+}
+
+/**
+ * Limpia todos los datos del torneo (equipos, partidas, chat)
+ * Mantiene los juegos por defecto
+ */
+function clearAllData() {
+    const confirmMessage = '🧹 LIMPIAR TODOS LOS DATOS 🧹\n\n' +
+        'Se eliminarán:\n' +
+        '• Todos los equipos registrados\n' +
+        '• Historial de partidas y brackets\n' +
+        '• Mensajes del chat\n' +
+        '• Juegos personalizados\n\n' +
+        'Se mantendrán:\n' +
+        '• Juegos por defecto del sistema\n\n' +
+        '¿Continuar con la limpieza?';
+    
+    if (confirm(confirmMessage)) {
+        // Limpiar datos específicos del torneo
+        teams = [];
+        chatMessages = [];
+        tournamentState = 'preparing';
+        currentBracket = null;
+        bracketVisualizer = null;
+        
+        // Restaurar juegos por defecto
+        games = [
+            { id: 1, name: 'Mario Kart', emoji: '🏎️', rules: 'Carrera de 4 vueltas. Gana el primero en llegar a la meta.' },
+            { id: 2, name: 'Super Smash Bros', emoji: '👊', rules: 'Mejor de 3 rounds. Sin items. Escenarios neutrales.' },
+            { id: 3, name: 'Marvel vs Capcom 3', emoji: '⚡', rules: 'Mejor de 5 rounds. Equipos de 3 personajes.' },
+            { id: 4, name: 'Mario Party', emoji: '🎲', rules: '10 turnos. Gana quien tenga más estrellas al final.' },
+            { id: 5, name: 'Street Fighter', emoji: '🥊', rules: 'Mejor de 5 rounds. Sin super meter inicial.' },
+            { id: 6, name: 'Tekken 7', emoji: '🥋', rules: 'Mejor de 3 rounds. Sin rage arts iniciales.' },
+            { id: 7, name: 'Rocket League', emoji: '⚽', rules: '5 minutos. Gana quien tenga más goles.' }
+        ];
+        
+        // Limpiar localStorage específico
+        localStorage.removeItem('tournament-teams');
+        localStorage.removeItem('tournament-chat');
+        localStorage.removeItem('tournament-bracket');
+        localStorage.removeItem('tournament-bracket-visualizer');
+        localStorage.removeItem('tournament-finish-data');
+        localStorage.setItem('tournament-state', tournamentState);
+        localStorage.setItem('tournament-games', JSON.stringify(games));
+        
+        // Actualizar interfaz
+        loadTeams();
+        loadGames();
+        loadChatSidebar();
+        updateTournamentInfo();
+        updateTournamentControls();
+        generateBrackets();
+        updateLeaderboard();
+        
+        alert('✅ Datos limpiados correctamente\n\n' +
+              'El sistema está listo para un nuevo torneo.');
     }
 }
 
@@ -1125,42 +1880,119 @@ function updateTournamentInfo() {
 }
 
 function updateTournamentControls() {
-    const startBtn = document.getElementById('start-btn');
-    const resetBtn = document.getElementById('reset-btn');
-    const finalizeBtn = document.getElementById('finalize-btn');
+    // Buscar botones tanto en la parte superior como en la sección de brackets
+    const startBtn = document.getElementById('start-btn') || document.getElementById('start-tournament-btn');
+    const resetBtn = document.getElementById('reset-btn') || document.getElementById('reset-tournament-btn');
+    const finalizeBtn = document.getElementById('finalize-btn') || document.getElementById('finalize-tournament-btn');
+    const clearBtn = document.getElementById('clear-btn') || document.getElementById('clear-tournament-btn');
+    const emergencyBtn = document.getElementById('emergency-btn') || document.getElementById('emergency-tournament-btn');
     
     updateFormVisibility();
     
-    // SIEMPRE mostrar los botones de control para evitar estados bloqueados
-    if (startBtn) {
-        startBtn.style.display = 'inline-block';
-        startBtn.disabled = teams.length < 2;
-        
-        // Cambiar texto según el estado
-        if (tournamentState === 'preparing') {
+    console.log(`🎛️ Actualizando controles del torneo - Estado: ${tournamentState}`);
+    
+    // Control de botones según estado del torneo
+    if (tournamentState === 'preparing') {
+        // Estado: Preparando torneo
+        if (startBtn) {
+            startBtn.style.display = 'inline-block';
+            startBtn.disabled = teams.length < 2;
             startBtn.innerHTML = '🚀 Comenzar Torneo';
             startBtn.className = 'btn btn-success';
-        } else {
-            startBtn.innerHTML = '🔄 Reiniciar y Comenzar';
-            startBtn.className = 'btn btn-warning';
+            console.log('✅ Botón Comenzar habilitado');
         }
-    }
-    
-    if (resetBtn) {
-        resetBtn.style.display = 'inline-block';
-        // Cambiar texto según el estado
-        if (tournamentState === 'preparing') {
-            resetBtn.innerHTML = '🧹 Limpiar Datos';
-            resetBtn.className = 'btn btn-secondary';
-        } else {
+        
+        if (resetBtn) {
+            resetBtn.style.display = 'none'; // No mostrar reiniciar si no hay torneo activo
+        }
+        
+        if (finalizeBtn) {
+            finalizeBtn.style.display = 'none'; // No mostrar finalizar si no hay torneo activo
+        }
+        
+        if (clearBtn) {
+            clearBtn.style.display = 'inline-block';
+            clearBtn.innerHTML = '🧹 Limpiar Datos';
+            clearBtn.className = 'btn btn-secondary';
+        }
+        
+        if (emergencyBtn) {
+            emergencyBtn.style.display = 'inline-block';
+            emergencyBtn.innerHTML = '🚨 Emergencia';
+            emergencyBtn.className = 'btn btn-danger';
+        }
+        
+    } else if (tournamentState === 'active') {
+        // Estado: Torneo activo
+        console.log('🏆 Torneo activo - Mostrando controles correspondientes');
+        
+        if (startBtn) {
+            startBtn.style.display = 'none'; // No mostrar comenzar si ya está activo
+        }
+        
+        if (resetBtn) {
+            resetBtn.style.display = 'inline-block';
             resetBtn.innerHTML = '🔄 Reiniciar Torneo';
             resetBtn.className = 'btn btn-warning';
+            console.log('✅ Botón Reiniciar visible');
+        }
+        
+        if (finalizeBtn) {
+            finalizeBtn.style.display = 'inline-block';
+            finalizeBtn.innerHTML = '🏆 Finalizar Torneo';
+            finalizeBtn.className = 'btn btn-primary';
+            console.log('✅ Botón Finalizar visible');
+        }
+        
+        if (clearBtn) {
+            clearBtn.style.display = 'none'; // No mostrar limpiar durante torneo activo
+        }
+        
+        if (emergencyBtn) {
+            emergencyBtn.style.display = 'inline-block';
+            emergencyBtn.innerHTML = '🚨 Emergencia';
+            emergencyBtn.className = 'btn btn-danger';
+            console.log('✅ Botón Emergencia visible');
+        }
+        
+    } else if (tournamentState === 'finished') {
+        // Estado: Torneo finalizado
+        if (startBtn) {
+            startBtn.style.display = 'inline-block';
+            startBtn.disabled = teams.length < 2;
+            startBtn.innerHTML = '🚀 Nuevo Torneo';
+            startBtn.className = 'btn btn-success';
+        }
+        
+        if (resetBtn) {
+            resetBtn.style.display = 'none';
+        }
+        
+        if (finalizeBtn) {
+            finalizeBtn.style.display = 'none';
+        }
+        
+        if (clearBtn) {
+            clearBtn.style.display = 'inline-block';
+            clearBtn.innerHTML = '🧹 Limpiar Todo';
+            clearBtn.className = 'btn btn-secondary';
+        }
+        
+        if (emergencyBtn) {
+            emergencyBtn.style.display = 'inline-block';
+            emergencyBtn.innerHTML = '🚨 Emergencia';
+            emergencyBtn.className = 'btn btn-danger';
         }
     }
     
-    if (finalizeBtn) {
-        finalizeBtn.style.display = tournamentState === 'active' ? 'inline-block' : 'none';
-    }
+    // Log para debugging
+    console.log('🎛️ Controles actualizados:', {
+        startBtn: startBtn ? 'encontrado' : 'no encontrado',
+        resetBtn: resetBtn ? 'encontrado' : 'no encontrado', 
+        finalizeBtn: finalizeBtn ? 'encontrado' : 'no encontrado',
+        clearBtn: clearBtn ? 'encontrado' : 'no encontrado',
+        emergencyBtn: emergencyBtn ? 'encontrado' : 'no encontrado'
+    });
 }
 
 function updateFormVisibility() {
