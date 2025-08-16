@@ -2,15 +2,7 @@ console.log('TORNEO DE VIDEOJUEGOS - SISTEMA UNIFICADO');
 
 // ===== VARIABLES GLOBALES =====
 let teams = JSON.parse(localStorage.getItem('tournament-teams')) || [];
-let games = JSON.parse(localStorage.getItem('tournament-games')) || [
-    { id: 1, name: 'Mario Kart', emoji: '🏎️', rules: 'Carrera de 4 vueltas. Gana el primero en llegar a la meta.' },
-    { id: 2, name: 'Super Smash Bros', emoji: '👊', rules: 'Mejor de 3 rounds. Sin items. Escenarios neutrales.' },
-    { id: 3, name: 'Marvel vs Capcom 3', emoji: '⚡', rules: 'Mejor de 5 rounds. Equipos de 3 personajes.' },
-    { id: 4, name: 'Mario Party', emoji: '🎲', rules: '10 turnos. Gana quien tenga más estrellas al final.' },
-    { id: 5, name: 'Street Fighter', emoji: '🥊', rules: 'Mejor de 5 rounds. Sin super meter inicial.' },
-    { id: 6, name: 'Tekken 7', emoji: '🥋', rules: 'Mejor de 3 rounds. Sin rage arts iniciales.' },
-    { id: 7, name: 'Rocket League', emoji: '⚽', rules: '5 minutos. Gana quien tenga más goles.' }
-];
+let games = JSON.parse(localStorage.getItem('tournament-games')) || [];
 
 let chatMessages = JSON.parse(localStorage.getItem('tournament-chat')) || [];
 let tournamentState = localStorage.getItem('tournament-state') || 'preparing';
@@ -638,7 +630,7 @@ class DoubleEliminationBracket {
         
         console.log(`✅ Auto-victoria procesada: ${winner.name} en match ${match.id}`);
         
-        // Actualizar estadísticas (solo puntos de participación, no victoria completa)
+        // Actualizar estadísticas (auto-avance sin puntos, solo cuenta partida jugada)
         this.updateTeamStats(winner, null, true);
         
         // Avanzar al siguiente match
@@ -666,11 +658,10 @@ class DoubleEliminationBracket {
         if (winnerTeam) {
             winnerTeam.stats.played++;
             if (isAutoWin) {
-                // Solo puntos de participación para auto-victorias
-                winnerTeam.stats.points += 1;
-                console.log(`📊 ${winner.name}: +1 punto (auto-avance)`);
+                // No dar puntos por auto-avances, solo contar como partida jugada
+                console.log(`📊 ${winner.name}: Auto-avance (sin puntos)`);
             } else {
-                // Victoria completa
+                // Victoria completa - solo aquí se otorgan puntos
                 winnerTeam.stats.won++;
                 winnerTeam.stats.points += 3;
                 console.log(`📊 ${winner.name}: +3 puntos (victoria)`);
@@ -682,8 +673,8 @@ class DoubleEliminationBracket {
             if (loserTeam) {
                 loserTeam.stats.played++;
                 loserTeam.stats.lost++;
-                loserTeam.stats.points += 1; // Punto de participación
-                console.log(`📊 ${loser.name}: +1 punto (participación)`);
+                // No dar puntos por participar - solo por ganar
+                console.log(`📊 ${loser.name}: Derrota (sin puntos)`);
             }
         }
         
@@ -820,11 +811,10 @@ class DoubleEliminationBracket {
         if (winnerTeam) {
             winnerTeam.stats.played++;
             if (isAutoWin) {
-                // Solo puntos de participación para auto-victorias
-                winnerTeam.stats.points += 1;
-                console.log(`📊 ${winner.name}: +1 punto (auto-avance)`);
+                // No dar puntos por auto-avances, solo contar como partida jugada
+                console.log(`📊 ${winner.name}: Auto-avance (sin puntos)`);
             } else {
-                // Victoria completa
+                // Victoria completa - solo aquí se otorgan puntos
                 winnerTeam.stats.won++;
                 winnerTeam.stats.points += 3;
                 console.log(`📊 ${winner.name}: +3 puntos (victoria)`);
@@ -836,8 +826,8 @@ class DoubleEliminationBracket {
             if (loserTeam) {
                 loserTeam.stats.played++;
                 loserTeam.stats.lost++;
-                loserTeam.stats.points += 1; // Punto de participación
-                console.log(`📊 ${loser.name}: +1 punto (participación)`);
+                // No dar puntos por participar - solo por ganar
+                console.log(`📊 ${loser.name}: Derrota (sin puntos)`);
             }
         }
         
@@ -886,7 +876,107 @@ class BracketVisualizer {
                 border-radius: var(--border-radius);
                 padding: 1rem;
                 border: 2px solid var(--primary-color);
+                margin-bottom: 2rem;
             }
+            
+            .bracket-section.grand-finals {
+                margin-top: 3rem;
+                padding: 2rem;
+                background: linear-gradient(135deg, #ff6b35 0%, #f7931e 50%, #ffcc02 100%);
+                border-radius: var(--border-radius);
+                border: 3px solid var(--accent-color);
+                box-shadow: 0 8px 32px rgba(255, 107, 53, 0.3);
+            }
+            
+            .bracket-section.grand-finals .bracket-title {
+                font-size: 1.8rem;
+                color: var(--bg-dark);
+                text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+                margin-bottom: 1.5rem;
+                text-align: center;
+                font-weight: bold;
+            }
+            
+            .bracket-section.grand-finals .round-title {
+                color: var(--bg-dark);
+                text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+                font-weight: bold;
+            }
+            
+            .bracket-section.grand-finals .match-card {
+                background: var(--bg-dark);
+                border: 2px solid var(--accent-color);
+                color: var(--text-primary);
+            }
+            
+            .bracket-section.grand-finals .match-header {
+                background: rgba(255, 204, 2, 0.2);
+                color: var(--text-primary);
+            }
+            
+            .bracket-section.grand-finals .team-slot {
+                color: var(--text-primary);
+                background: var(--bg-medium);
+            }
+            
+            .bracket-section.grand-finals .winner-btn {
+                background: var(--success-color);
+                color: var(--bg-dark);
+                font-weight: bold;
+            }
+            
+            .teams-grid {
+                display: grid !important;
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)) !important;
+                gap: 1rem !important;
+                margin-top: 1rem !important;
+            }
+            
+            .team-actions {
+                display: flex;
+                gap: 0.5rem;
+                margin-top: 1rem;
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .info-btn, .remove-btn {
+                padding: 0.5rem 1rem;
+                border: none;
+                border-radius: var(--border-radius);
+                font-family: 'Press Start 2P', monospace;
+                font-size: 8px;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                min-width: 80px;
+            }
+            
+            .info-btn {
+                background: var(--info-color, #17a2b8);
+                color: white;
+            }
+            
+            .info-btn:hover {
+                background: #138496;
+                transform: translateY(-2px);
+            }
+            
+            .remove-btn {
+                background: var(--danger-color, #dc3545);
+                color: white;
+            }
+            
+            .remove-btn:hover:not(:disabled) {
+                background: #c82333;
+                transform: translateY(-2px);
+            }
+            
+            .remove-btn:disabled {
+                background: #6c757d;
+                cursor: not-allowed;
+                opacity: 0.6;
+            }
+            
             .bracket-title {
                 color: var(--accent-color);
                 font-size: 14px;
@@ -1574,6 +1664,9 @@ function processManualAutoAdvances() {
  * Muestra un modal de celebración para el ganador del torneo
  */
 function showWinnerModal(winner) {
+    // Buscar el equipo completo con estadísticas actualizadas
+    const winnerTeam = teams.find(team => team.id === winner.id) || winner;
+    
     // Crear el modal
     const modal = document.createElement('div');
     modal.id = 'winner-modal';
@@ -1592,9 +1685,12 @@ function showWinnerModal(winner) {
     `;
     
     // Obtener foto del equipo
-    const teamPhoto = winner.photos && winner.photos.team 
-        ? `<img src="${winner.photos.team}" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 4px solid var(--accent-color); margin-bottom: 1rem;">`
-        : '<div style="width: 120px; height: 120px; border-radius: 50%; background: linear-gradient(45deg, var(--primary-color), var(--secondary-color)); display: flex; align-items: center; justify-content: center; font-size: 60px; margin-bottom: 1rem; border: 4px solid var(--accent-color);">🏆</div>';
+    const teamPhoto = winnerTeam.photos && winnerTeam.photos.team 
+        ? `<img src="${winnerTeam.photos.team}" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 4px solid var(--accent-color); margin-bottom: 1rem;">`
+        : `<img src="${createTeamPlaceholder(winnerTeam.name)}" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 4px solid var(--accent-color); margin-bottom: 1rem;">`;
+    
+    // Asegurar que las estadísticas existan
+    const stats = winnerTeam.stats || { played: 0, won: 0, lost: 0, points: 0 };
     
     // Contenido del modal
     modal.innerHTML = `
@@ -1640,14 +1736,14 @@ function showWinnerModal(winner) {
                     font-size: 1.5rem;
                     margin-bottom: 0.5rem;
                     text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-                ">${winner.name}</h2>
+                ">${winnerTeam.name}</h2>
                 
                 <p style="
                     color: var(--secondary-color);
                     font-size: 1rem;
                     margin-bottom: 2rem;
                     opacity: 0.9;
-                ">${winner.players.join(' & ')}</p>
+                ">${winnerTeam.players.join(' & ')}</p>
                 
                 <div style="
                     background: var(--bg-light);
@@ -1658,10 +1754,10 @@ function showWinnerModal(winner) {
                 ">
                     <h3 style="color: var(--accent-color); margin-bottom: 0.5rem;">📊 Estadísticas Finales</h3>
                     <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; font-size: 0.9rem;">
-                        <div>🎮 Partidas: <strong>${winner.stats.played}</strong></div>
-                        <div>🏆 Victorias: <strong>${winner.stats.won}</strong></div>
-                        <div>💔 Derrotas: <strong>${winner.stats.lost}</strong></div>
-                        <div>⭐ Puntos: <strong>${winner.stats.points}</strong></div>
+                        <div>🎮 Partidas: <strong>${stats.played}</strong></div>
+                        <div>🏆 Victorias: <strong>${stats.won}</strong></div>
+                        <div>💔 Derrotas: <strong>${stats.lost}</strong></div>
+                        <div>⭐ Puntos: <strong>${stats.points}</strong></div>
                     </div>
                 </div>
                 
@@ -1952,7 +2048,8 @@ function startTournament() {
         '• ' + teamCount + ' equipos registrados\n' +
         '• ' + games.length + ' juegos disponibles\n' +
         '• Aproximadamente ' + estimatedMatches + ' partidas\n' +
-        '• Sistema: Winners + Losers + Grand Finals\n\n' +
+        '• Sistema: Winners + Losers + Grand Finals\n' +
+        '• Puntos: 3 por victoria únicamente\n\n' +
         'Continuar?';
     
     if (confirm(confirmMessage)) {
@@ -2566,7 +2663,7 @@ function updateFormVisibility() {
 }
 
 // ===== GESTION DE EQUIPOS =====
-function registerTeam() {
+async function registerTeam() {
     const teamName = document.getElementById('team-name').value.trim();
     const player1 = document.getElementById('player1-name').value.trim();
     const player2 = document.getElementById('player2-name').value.trim();
@@ -2593,7 +2690,9 @@ function registerTeam() {
     
     console.log('registerTeam() - Nuevo equipo:', newTeam);
     
-    handleTeamPhotos(newTeam);
+    // Esperar a que se carguen las fotos
+    await handleTeamPhotos(newTeam);
+    
     teams.push(newTeam);
     localStorage.setItem('tournament-teams', JSON.stringify(teams));
     
@@ -2607,36 +2706,84 @@ function registerTeam() {
 }
 
 function handleTeamPhotos(team) {
-    const teamPhotoInput = document.getElementById('team-photo');
-    const player1PhotoInput = document.getElementById('player1-photo');
-    const player2PhotoInput = document.getElementById('player2-photo');
-    
-    if (teamPhotoInput && teamPhotoInput.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            team.photos.team = e.target.result;
-            localStorage.setItem('tournament-teams', JSON.stringify(teams));
+    return new Promise((resolve) => {
+        const teamPhotoInput = document.getElementById('team-photo');
+        const player1PhotoInput = document.getElementById('player1-photo');
+        const player2PhotoInput = document.getElementById('player2-photo');
+        
+        let pendingReads = 0;
+        let completedReads = 0;
+        
+        const checkComplete = () => {
+            completedReads++;
+            if (completedReads === pendingReads) {
+                localStorage.setItem('tournament-teams', JSON.stringify(teams));
+                resolve();
+            }
         };
-        reader.readAsDataURL(teamPhotoInput.files[0]);
-    }
+        
+        if (teamPhotoInput && teamPhotoInput.files[0]) {
+            pendingReads++;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                team.photos.team = e.target.result;
+                console.log('📷 Foto de equipo cargada');
+                checkComplete();
+            };
+            reader.readAsDataURL(teamPhotoInput.files[0]);
+        }
+        
+        if (player1PhotoInput && player1PhotoInput.files[0]) {
+            pendingReads++;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                team.photos.player1 = e.target.result;
+                console.log('📷 Foto de jugador 1 cargada');
+                checkComplete();
+            };
+            reader.readAsDataURL(player1PhotoInput.files[0]);
+        }
+        
+        if (player2PhotoInput && player2PhotoInput.files[0]) {
+            pendingReads++;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                team.photos.player2 = e.target.result;
+                console.log('📷 Foto de jugador 2 cargada');
+                checkComplete();
+            };
+            reader.readAsDataURL(player2PhotoInput.files[0]);
+        }
+        
+        // Si no hay archivos para leer, resolver inmediatamente
+        if (pendingReads === 0) {
+            resolve();
+        }
+    });
+}
+
+// Crear placeholder atractivo para equipos sin foto
+function createTeamPlaceholder(teamName) {
+    const colors = ['#ff6b35', '#f7931e', '#ffcc02', '#2196f3', '#9c27b0', '#4caf50'];
+    const color = colors[teamName.length % colors.length];
+    const initials = teamName.split(' ').map(word => word[0]).join('').substring(0, 2).toUpperCase();
     
-    if (player1PhotoInput && player1PhotoInput.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            team.photos.player1 = e.target.result;
-            localStorage.setItem('tournament-teams', JSON.stringify(teams));
-        };
-        reader.readAsDataURL(player1PhotoInput.files[0]);
-    }
+    const svg = `
+        <svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <linearGradient id="grad${teamName.replace(/\s/g, '')}" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:${color};stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:${color}88;stop-opacity:1" />
+                </linearGradient>
+            </defs>
+            <rect width="100" height="100" fill="url(#grad${teamName.replace(/\s/g, '')})" rx="8"/>
+            <circle cx="50" cy="35" r="12" fill="white" opacity="0.9"/>
+            <path d="M30 65 Q30 55 40 55 L60 55 Q70 55 70 65 L70 75 Q70 80 65 80 L35 80 Q30 80 30 75 Z" fill="white" opacity="0.9"/>
+            <text x="50" y="95" font-family="'Press Start 2P', monospace" font-size="8" fill="white" text-anchor="middle" font-weight="bold">${initials}</text>
+        </svg>
+    `;
     
-    if (player2PhotoInput && player2PhotoInput.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            team.photos.player2 = e.target.result;
-            localStorage.setItem('tournament-teams', JSON.stringify(teams));
-        };
-        reader.readAsDataURL(player2PhotoInput.files[0]);
-    }
+    return 'data:image/svg+xml;base64,' + btoa(svg);
 }
 
 function loadTeams() {
@@ -2663,12 +2810,13 @@ function loadTeams() {
     `;
     
     teams.forEach(team => {
-        const teamPhoto = team.photos?.team || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiBmaWxsPSIjMzMzIi8+Cjx0ZXh0IHg9IjUwIiB5PSI1NSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE0IiBmaWxsPSIjNjY2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7wn5OIPC90ZXh0Pgo8L3N2Zz4=';
+        // Crear una imagen placeholder más atractiva si no hay foto
+        const teamPhoto = team.photos?.team || createTeamPlaceholder(team.name);
         
         html += `
-            <div class="team-card">
+            <div class="team-card-custom">
                 <div class="team-photo">
-                    <img src="${teamPhoto}" alt="${team.name}">
+                    <img src="${teamPhoto}" alt="${team.name}" onerror="this.src='${createTeamPlaceholder(team.name)}'">
                 </div>
                 <div class="team-info">
                     <h4>${team.name}</h4>
@@ -2680,15 +2828,371 @@ function loadTeams() {
                         <span>Puntos: ${team.stats.points}</span>
                     </div>
                 </div>
-                <button onclick="removeTeam(${team.id})" class="remove-btn" ${tournamentState === 'active' ? 'disabled' : ''}>
-                    Eliminar
-                </button>
+                <div class="team-actions">
+                    <button onclick="showTeamModal(${team.id})" class="info-btn">
+                        📋 Info
+                    </button>
+                    <button onclick="removeTeam(${team.id})" class="remove-btn" ${tournamentState === 'active' ? 'disabled' : ''}>
+                        🗑️ Eliminar
+                    </button>
+                </div>
             </div>
         `;
     });
     
     html += '</div>';
     container.innerHTML = html;
+}
+
+function showTeamModal(teamId) {
+    const team = teams.find(t => t.id === teamId);
+    if (!team) return;
+    
+    // Crear el modal
+    const modal = document.createElement('div');
+    modal.id = 'team-modal';
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+        animation: fadeIn 0.3s ease-in-out;
+    `;
+    
+    // Obtener foto del equipo
+    const teamPhoto = team.photos?.team || createTeamPlaceholder(team.name);
+    const stats = team.stats || { played: 0, won: 0, lost: 0, points: 0 };
+    
+    // Contenido del modal
+    modal.innerHTML = `
+        <div style="
+            background: linear-gradient(135deg, var(--bg-dark) 0%, var(--bg-medium) 100%);
+            padding: 2rem;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            border: 2px solid var(--primary-color);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            position: relative;
+        ">
+            <button onclick="closeTeamModal()" style="
+                position: absolute;
+                top: 10px;
+                right: 15px;
+                background: none;
+                border: none;
+                color: var(--text-light);
+                font-size: 20px;
+                cursor: pointer;
+                padding: 5px;
+            ">×</button>
+            
+            <h2 style="
+                color: var(--primary-color);
+                margin-bottom: 1rem;
+                font-size: 1.3rem;
+            ">📋 Información del Equipo</h2>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <img src="${teamPhoto}" style="
+                    width: 100px;
+                    height: 100px;
+                    border-radius: 50%;
+                    object-fit: cover;
+                    border: 3px solid var(--accent-color);
+                    margin-bottom: 1rem;
+                ">
+                
+                <h3 style="
+                    color: var(--accent-color);
+                    margin-bottom: 0.5rem;
+                    font-size: 1.1rem;
+                ">${team.name}</h3>
+                
+                <p style="
+                    color: var(--secondary-color);
+                    margin-bottom: 1rem;
+                ">${team.players.join(' & ')}</p>
+            </div>
+            
+            <div style="
+                background: var(--bg-light);
+                padding: 1rem;
+                border-radius: 10px;
+                margin-bottom: 1.5rem;
+                border: 1px solid var(--secondary-color);
+            ">
+                <h4 style="color: var(--accent-color); margin-bottom: 0.8rem;">📊 Estadísticas</h4>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; font-size: 0.9rem;">
+                    <div>🎮 Partidas: <strong>${stats.played}</strong></div>
+                    <div>🏆 Victorias: <strong>${stats.won}</strong></div>
+                    <div>💔 Derrotas: <strong>${stats.lost}</strong></div>
+                    <div>⭐ Puntos: <strong>${stats.points}</strong></div>
+                </div>
+                ${stats.played > 0 ? `
+                    <div style="margin-top: 0.8rem; padding-top: 0.8rem; border-top: 1px solid var(--secondary-color);">
+                        <div>📈 Ratio Victoria: <strong>${((stats.won / stats.played) * 100).toFixed(1)}%</strong></div>
+                    </div>
+                ` : ''}
+            </div>
+            
+            <div style="display: flex; gap: 1rem; justify-content: center;">
+                <button onclick="closeTeamModal()" style="
+                    background: var(--secondary-color);
+                    color: white;
+                    border: none;
+                    padding: 0.8rem 1.5rem;
+                    border-radius: var(--border-radius);
+                    font-family: 'Press Start 2P', monospace;
+                    font-size: 8px;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                ">
+                    ✅ CERRAR
+                </button>
+                
+                ${tournamentState !== 'active' ? `
+                    <button onclick="editTeam(${team.id})" style="
+                        background: var(--info-color, #17a2b8);
+                        color: white;
+                        border: none;
+                        padding: 0.8rem 1.5rem;
+                        border-radius: var(--border-radius);
+                        font-family: 'Press Start 2P', monospace;
+                        font-size: 8px;
+                        cursor: pointer;
+                        transition: all 0.3s ease;
+                    ">
+                        ✏️ EDITAR
+                    </button>
+                ` : ''}
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+}
+
+function closeTeamModal() {
+    const modal = document.getElementById('team-modal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+function editTeam(teamId) {
+    const team = teams.find(t => t.id === teamId);
+    if (!team) return;
+    
+    closeTeamModal();
+    
+    // Crear modal de edición
+    const modal = document.createElement('div');
+    modal.id = 'edit-team-modal';
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+        animation: fadeIn 0.3s ease-in-out;
+    `;
+    
+    modal.innerHTML = `
+        <div style="
+            background: linear-gradient(135deg, var(--bg-dark) 0%, var(--bg-medium) 100%);
+            padding: 2rem;
+            border-radius: 15px;
+            max-width: 500px;
+            width: 90%;
+            border: 2px solid var(--primary-color);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            position: relative;
+        ">
+            <button onclick="closeEditTeamModal()" style="
+                position: absolute;
+                top: 10px;
+                right: 15px;
+                background: none;
+                border: none;
+                color: var(--text-light);
+                font-size: 20px;
+                cursor: pointer;
+                padding: 5px;
+            ">×</button>
+            
+            <h2 style="
+                color: var(--primary-color);
+                margin-bottom: 1.5rem;
+                font-size: 1.3rem;
+                text-align: center;
+            ">✏️ Editar Equipo</h2>
+            
+            <form id="edit-team-form" style="display: flex; flex-direction: column; gap: 1rem;">
+                <div>
+                    <label style="color: var(--text-primary); font-size: 0.9rem; margin-bottom: 0.5rem; display: block;">
+                        Nombre del Equipo:
+                    </label>
+                    <input type="text" id="edit-team-name" value="${team.name}" style="
+                        width: 100%;
+                        padding: 0.8rem;
+                        border: 2px solid var(--primary-color);
+                        border-radius: var(--border-radius);
+                        background: var(--bg-light);
+                        color: var(--text-primary);
+                        font-family: 'Press Start 2P', monospace;
+                        font-size: 10px;
+                    ">
+                </div>
+                
+                <div>
+                    <label style="color: var(--text-primary); font-size: 0.9rem; margin-bottom: 0.5rem; display: block;">
+                        Jugador 1:
+                    </label>
+                    <input type="text" id="edit-player1-name" value="${team.players[0]}" style="
+                        width: 100%;
+                        padding: 0.8rem;
+                        border: 2px solid var(--primary-color);
+                        border-radius: var(--border-radius);
+                        background: var(--bg-light);
+                        color: var(--text-primary);
+                        font-family: 'Press Start 2P', monospace;
+                        font-size: 10px;
+                    ">
+                </div>
+                
+                <div>
+                    <label style="color: var(--text-primary); font-size: 0.9rem; margin-bottom: 0.5rem; display: block;">
+                        Jugador 2:
+                    </label>
+                    <input type="text" id="edit-player2-name" value="${team.players[1]}" style="
+                        width: 100%;
+                        padding: 0.8rem;
+                        border: 2px solid var(--primary-color);
+                        border-radius: var(--border-radius);
+                        background: var(--bg-light);
+                        color: var(--text-primary);
+                        font-family: 'Press Start 2P', monospace;
+                        font-size: 10px;
+                    ">
+                </div>
+                
+                <div>
+                    <label style="color: var(--text-primary); font-size: 0.9rem; margin-bottom: 0.5rem; display: block;">
+                        Foto del Equipo (opcional):
+                    </label>
+                    <input type="file" id="edit-team-photo" accept="image/*" style="
+                        width: 100%;
+                        padding: 0.5rem;
+                        border: 2px solid var(--primary-color);
+                        border-radius: var(--border-radius);
+                        background: var(--bg-light);
+                        color: var(--text-primary);
+                        font-size: 10px;
+                    ">
+                </div>
+                
+                <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 1rem;">
+                    <button type="button" onclick="saveTeamEdits(${team.id})" style="
+                        background: var(--success-color);
+                        color: white;
+                        border: none;
+                        padding: 0.8rem 1.5rem;
+                        border-radius: var(--border-radius);
+                        font-family: 'Press Start 2P', monospace;
+                        font-size: 8px;
+                        cursor: pointer;
+                        transition: all 0.3s ease;
+                    ">
+                        💾 GUARDAR
+                    </button>
+                    
+                    <button type="button" onclick="closeEditTeamModal()" style="
+                        background: var(--secondary-color);
+                        color: white;
+                        border: none;
+                        padding: 0.8rem 1.5rem;
+                        border-radius: var(--border-radius);
+                        font-family: 'Press Start 2P', monospace;
+                        font-size: 8px;
+                        cursor: pointer;
+                        transition: all 0.3s ease;
+                    ">
+                        ❌ CANCELAR
+                    </button>
+                </div>
+            </form>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+}
+
+function closeEditTeamModal() {
+    const modal = document.getElementById('edit-team-modal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+async function saveTeamEdits(teamId) {
+    const team = teams.find(t => t.id === teamId);
+    if (!team) return;
+    
+    const newName = document.getElementById('edit-team-name').value.trim();
+    const newPlayer1 = document.getElementById('edit-player1-name').value.trim();
+    const newPlayer2 = document.getElementById('edit-player2-name').value.trim();
+    
+    if (!newName || !newPlayer1 || !newPlayer2) {
+        alert('Por favor completa todos los campos obligatorios');
+        return;
+    }
+    
+    // Verificar que el nombre no esté en uso por otro equipo
+    const existingTeam = teams.find(t => t.id !== teamId && t.name.toLowerCase() === newName.toLowerCase());
+    if (existingTeam) {
+        alert('Ya existe otro equipo con ese nombre');
+        return;
+    }
+    
+    // Actualizar datos básicos
+    team.name = newName;
+    team.players = [newPlayer1, newPlayer2];
+    
+    // Manejar nueva foto si se seleccionó
+    const photoInput = document.getElementById('edit-team-photo');
+    if (photoInput && photoInput.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            team.photos.team = e.target.result;
+            localStorage.setItem('tournament-teams', JSON.stringify(teams));
+            loadTeams();
+        };
+        reader.readAsDataURL(photoInput.files[0]);
+    }
+    
+    // Guardar cambios
+    localStorage.setItem('tournament-teams', JSON.stringify(teams));
+    
+    // Actualizar interfaz
+    loadTeams();
+    updateTournamentInfo();
+    generateBrackets();
+    
+    closeEditTeamModal();
+    alert(`✅ Equipo "${newName}" actualizado exitosamente!`);
 }
 
 function removeTeam(teamId) {
@@ -2715,28 +3219,34 @@ function loadGames() {
     const container = document.getElementById('games-grid');
     if (!container) return;
     
+    if (games.length === 0) {
+        container.innerHTML = `
+            <div style="text-align: center; padding: 3rem; opacity: 0.7;">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">🎮</div>
+                <p style="font-size: 1.2rem; margin-bottom: 0.5rem;">No hay juegos registrados</p>
+                <p style="font-size: 10px; margin-top: 1rem;">Usa el formulario de arriba para agregar juegos al torneo</p>
+            </div>
+        `;
+        return;
+    }
+    
     let html = `
-        <div style="margin-bottom: 1rem; text-align: center;">
-            <p style="color: var(--accent-color); font-size: 12px;">Juegos Disponibles (${games.length})</p>
+        <div class="games-header">
+            <p class="games-count">🎮 Juegos Disponibles (${games.length})</p>
         </div>
-        <div class="games-grid">
+        <div class="games-grid-custom">
     `;
     
     games.forEach(game => {
-        const isCustom = game.id > 1000;
-        
         html += `
-            <div class="game-card">
-                <div class="game-emoji">${game.emoji}</div>
-                <div class="game-info">
-                    <h4>${game.name}</h4>
-                    ${game.rules ? `<p class="game-rules">${game.rules}</p>` : ''}
+            <div class="game-card" onclick="showGameModal(${game.id})" style="cursor: pointer;">
+                <div class="game-header">
+                    <div class="game-emoji">${game.emoji}</div>
                 </div>
-                ${isCustom ? `
-                    <button onclick="removeGame(${game.id})" class="remove-btn" ${tournamentState === 'active' ? 'disabled' : ''}>
-                        Eliminar
-                    </button>
-                ` : ''}
+                <div class="game-info">
+                    <h4 class="game-name">${game.name}</h4>
+                    <p class="game-click-hint">Click para ver detalles</p>
+                </div>
             </div>
         `;
     });
@@ -2747,11 +3257,16 @@ function loadGames() {
 
 function addGame() {
     const gameName = document.getElementById('game-name').value.trim();
-    const gameEmoji = document.getElementById('game-emoji').value.trim();
+    const gameEmoji = document.getElementById('game-emoji').value;
     const gameRules = document.getElementById('game-rules').value.trim();
     
     if (!gameName) {
         alert('El nombre del juego es obligatorio');
+        return;
+    }
+    
+    if (!gameEmoji) {
+        alert('Debes seleccionar un emoji para el juego');
         return;
     }
     
@@ -2761,17 +3276,411 @@ function addGame() {
     }
     
     const newGame = {
-        id: Date.now() + 1000,
+        id: Date.now(),
         name: gameName,
-        emoji: gameEmoji || 'GAME',
-        rules: gameRules || ''
+        emoji: gameEmoji,
+        rules: gameRules || null
     };
+    
+    console.log('🎮 Nuevo juego agregado:', newGame);
     
     games.push(newGame);
     localStorage.setItem('tournament-games', JSON.stringify(games));
     document.getElementById('game-form').reset();
     loadGames();
     alert('Juego "' + gameName + '" agregado exitosamente!');
+}
+
+function showGameModal(gameId) {
+    const game = games.find(g => g.id === gameId);
+    if (!game) return;
+    
+    // Crear el modal
+    const modal = document.createElement('div');
+    modal.id = 'game-modal';
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+        animation: fadeIn 0.3s ease-in-out;
+    `;
+    
+    modal.innerHTML = `
+        <div style="
+            background: linear-gradient(135deg, var(--bg-dark) 0%, var(--bg-medium) 100%);
+            padding: 2rem;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+            border: 2px solid var(--primary-color);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            position: relative;
+        ">
+            <button onclick="closeGameModal()" style="
+                position: absolute;
+                top: 10px;
+                right: 15px;
+                background: none;
+                border: none;
+                color: var(--text-light);
+                font-size: 20px;
+                cursor: pointer;
+                padding: 5px;
+            ">×</button>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <div style="font-size: 4rem; margin-bottom: 1rem;">${game.emoji}</div>
+                <h2 style="
+                    color: var(--primary-color);
+                    margin-bottom: 1rem;
+                    font-size: 1.5rem;
+                ">${game.name}</h2>
+            </div>
+            
+            ${game.rules ? `
+                <div style="
+                    background: var(--bg-light);
+                    padding: 1.5rem;
+                    border-radius: 10px;
+                    margin-bottom: 2rem;
+                    border: 1px solid var(--secondary-color);
+                    text-align: left;
+                ">
+                    <h3 style="color: var(--accent-color); margin-bottom: 1rem; text-align: center;">📋 Reglas del Juego</h3>
+                    <p style="
+                        color: var(--text-primary);
+                        line-height: 1.6;
+                        font-size: 0.9rem;
+                        margin: 0;
+                        white-space: pre-wrap;
+                    ">${game.rules}</p>
+                </div>
+            ` : `
+                <div style="
+                    background: var(--bg-light);
+                    padding: 1.5rem;
+                    border-radius: 10px;
+                    margin-bottom: 2rem;
+                    border: 1px solid var(--secondary-color);
+                ">
+                    <p style="
+                        color: var(--text-light);
+                        font-style: italic;
+                        opacity: 0.7;
+                        margin: 0;
+                    ">Este juego no tiene reglas específicas definidas</p>
+                </div>
+            `}
+            
+            <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                <button onclick="closeGameModal()" style="
+                    background: var(--secondary-color);
+                    color: white;
+                    border: none;
+                    padding: 0.8rem 1.5rem;
+                    border-radius: var(--border-radius);
+                    font-family: 'Press Start 2P', monospace;
+                    font-size: 8px;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                ">
+                    ✅ CERRAR
+                </button>
+                
+                ${tournamentState !== 'active' ? `
+                    <button onclick="editGameFromModal(${game.id})" style="
+                        background: var(--info-color, #17a2b8);
+                        color: white;
+                        border: none;
+                        padding: 0.8rem 1.5rem;
+                        border-radius: var(--border-radius);
+                        font-family: 'Press Start 2P', monospace;
+                        font-size: 8px;
+                        cursor: pointer;
+                        transition: all 0.3s ease;
+                    ">
+                        ✏️ EDITAR
+                    </button>
+                    
+                    <button onclick="removeGameFromModal(${game.id})" style="
+                        background: var(--danger-color, #dc3545);
+                        color: white;
+                        border: none;
+                        padding: 0.8rem 1.5rem;
+                        border-radius: var(--border-radius);
+                        font-family: 'Press Start 2P', monospace;
+                        font-size: 8px;
+                        cursor: pointer;
+                        transition: all 0.3s ease;
+                    ">
+                        🗑️ ELIMINAR
+                    </button>
+                ` : ''}
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+}
+
+function closeGameModal() {
+    const modal = document.getElementById('game-modal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+function editGameFromModal(gameId) {
+    closeGameModal();
+    editGame(gameId);
+}
+
+function removeGameFromModal(gameId) {
+    closeGameModal();
+    removeGame(gameId);
+}
+
+function editGame(gameId) {
+    const game = games.find(g => g.id === gameId);
+    if (!game) return;
+    
+    // Crear modal de edición
+    const modal = document.createElement('div');
+    modal.id = 'edit-game-modal';
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+        animation: fadeIn 0.3s ease-in-out;
+    `;
+    
+    modal.innerHTML = `
+        <div style="
+            background: linear-gradient(135deg, var(--bg-dark) 0%, var(--bg-medium) 100%);
+            padding: 2rem;
+            border-radius: 15px;
+            max-width: 500px;
+            width: 90%;
+            border: 2px solid var(--info-color, #17a2b8);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            position: relative;
+        ">
+            <button onclick="closeEditGameModal()" style="
+                position: absolute;
+                top: 10px;
+                right: 15px;
+                background: none;
+                border: none;
+                color: var(--text-light);
+                font-size: 20px;
+                cursor: pointer;
+                padding: 5px;
+            ">×</button>
+            
+            <h2 style="
+                color: var(--info-color, #17a2b8);
+                margin-bottom: 1.5rem;
+                font-size: 1.3rem;
+                text-align: center;
+            ">🎮 Editar Juego</h2>
+            
+            <form id="edit-game-form" style="display: flex; flex-direction: column; gap: 1rem;">
+                <div>
+                    <label style="color: var(--text-primary); font-size: 0.9rem; margin-bottom: 0.5rem; display: block;">
+                        Nombre del Juego:
+                    </label>
+                    <input type="text" id="edit-game-name" value="${game.name}" style="
+                        width: 100%;
+                        padding: 0.8rem;
+                        border: 2px solid var(--info-color, #17a2b8);
+                        border-radius: var(--border-radius);
+                        background: var(--bg-light);
+                        color: var(--text-primary);
+                        font-family: 'Press Start 2P', monospace;
+                        font-size: 10px;
+                    ">
+                </div>
+                
+                <div>
+                    <label style="color: var(--text-primary); font-size: 0.9rem; margin-bottom: 0.5rem; display: block;">
+                        Emoji:
+                    </label>
+                    <select id="edit-game-emoji" style="
+                        width: 100%;
+                        padding: 0.8rem;
+                        border: 2px solid var(--info-color, #17a2b8);
+                        border-radius: var(--border-radius);
+                        background: var(--bg-light);
+                        color: var(--text-primary);
+                        font-family: 'Press Start 2P', monospace;
+                        font-size: 10px;
+                    ">
+                        <optgroup label="🥊 Peleas">
+                            <option value="🥊" ${game.emoji === '🥊' ? 'selected' : ''}>🥊 Boxeo</option>
+                            <option value="👊" ${game.emoji === '👊' ? 'selected' : ''}>👊 Puño</option>
+                            <option value="🥋" ${game.emoji === '🥋' ? 'selected' : ''}>🥋 Artes Marciales</option>
+                            <option value="⚡" ${game.emoji === '⚡' ? 'selected' : ''}>⚡ Energía</option>
+                            <option value="💥" ${game.emoji === '💥' ? 'selected' : ''}>💥 Explosión</option>
+                            <option value="🔥" ${game.emoji === '🔥' ? 'selected' : ''}>🔥 Fuego</option>
+                            <option value="⚔️" ${game.emoji === '⚔️' ? 'selected' : ''}>⚔️ Espadas</option>
+                            <option value="🛡️" ${game.emoji === '🛡️' ? 'selected' : ''}>🛡️ Escudo</option>
+                        </optgroup>
+                        <optgroup label="🏎️ Carreras">
+                            <option value="🏎️" ${game.emoji === '🏎️' ? 'selected' : ''}>🏎️ Fórmula 1</option>
+                            <option value="🚗" ${game.emoji === '🚗' ? 'selected' : ''}>🚗 Auto</option>
+                            <option value="🏍️" ${game.emoji === '🏍️' ? 'selected' : ''}>🏍️ Moto</option>
+                            <option value="🚲" ${game.emoji === '🚲' ? 'selected' : ''}>🚲 Bicicleta</option>
+                            <option value="🛻" ${game.emoji === '🛻' ? 'selected' : ''}>🛻 Camioneta</option>
+                            <option value="🚁" ${game.emoji === '🚁' ? 'selected' : ''}>🚁 Helicóptero</option>
+                            <option value="✈️" ${game.emoji === '✈️' ? 'selected' : ''}>✈️ Avión</option>
+                            <option value="🚀" ${game.emoji === '🚀' ? 'selected' : ''}>🚀 Cohete</option>
+                        </optgroup>
+                        <optgroup label="⚽ Deportes">
+                            <option value="⚽" ${game.emoji === '⚽' ? 'selected' : ''}>⚽ Fútbol</option>
+                            <option value="🏀" ${game.emoji === '🏀' ? 'selected' : ''}>🏀 Básquet</option>
+                            <option value="🏈" ${game.emoji === '🏈' ? 'selected' : ''}>🏈 Fútbol Americano</option>
+                            <option value="⚾" ${game.emoji === '⚾' ? 'selected' : ''}>⚾ Béisbol</option>
+                            <option value="🎾" ${game.emoji === '🎾' ? 'selected' : ''}>🎾 Tenis</option>
+                            <option value="🏐" ${game.emoji === '🏐' ? 'selected' : ''}>🏐 Voleibol</option>
+                            <option value="🏓" ${game.emoji === '🏓' ? 'selected' : ''}>🏓 Ping Pong</option>
+                            <option value="🥅" ${game.emoji === '🥅' ? 'selected' : ''}>🥅 Portería</option>
+                        </optgroup>
+                        <optgroup label="🎮 Gaming">
+                            <option value="🎮" ${game.emoji === '🎮' ? 'selected' : ''}>🎮 Control</option>
+                            <option value="🕹️" ${game.emoji === '🕹️' ? 'selected' : ''}>🕹️ Joystick</option>
+                            <option value="👾" ${game.emoji === '👾' ? 'selected' : ''}>👾 Alien</option>
+                            <option value="🤖" ${game.emoji === '🤖' ? 'selected' : ''}>🤖 Robot</option>
+                            <option value="🎯" ${game.emoji === '🎯' ? 'selected' : ''}>🎯 Diana</option>
+                            <option value="🎲" ${game.emoji === '🎲' ? 'selected' : ''}>🎲 Dado</option>
+                            <option value="🃏" ${game.emoji === '🃏' ? 'selected' : ''}>🃏 Cartas</option>
+                            <option value="🎪" ${game.emoji === '🎪' ? 'selected' : ''}>🎪 Circo</option>
+                        </optgroup>
+                        <optgroup label="🏆 Competencia">
+                            <option value="🏆" ${game.emoji === '🏆' ? 'selected' : ''}>🏆 Trofeo</option>
+                            <option value="🥇" ${game.emoji === '🥇' ? 'selected' : ''}>🥇 Oro</option>
+                            <option value="🥈" ${game.emoji === '🥈' ? 'selected' : ''}>🥈 Plata</option>
+                            <option value="🥉" ${game.emoji === '🥉' ? 'selected' : ''}>🥉 Bronce</option>
+                            <option value="🏅" ${game.emoji === '🏅' ? 'selected' : ''}>🏅 Medalla</option>
+                            <option value="⭐" ${game.emoji === '⭐' ? 'selected' : ''}>⭐ Estrella</option>
+                            <option value="🌟" ${game.emoji === '🌟' ? 'selected' : ''}>🌟 Estrella Brillante</option>
+                            <option value="💎" ${game.emoji === '💎' ? 'selected' : ''}>💎 Diamante</option>
+                        </optgroup>
+                    </select>
+                </div>
+                
+                <div>
+                    <label style="color: var(--text-primary); font-size: 0.9rem; margin-bottom: 0.5rem; display: block;">
+                        Reglas (opcional):
+                    </label>
+                    <textarea id="edit-game-rules" rows="4" style="
+                        width: 100%;
+                        padding: 0.8rem;
+                        border: 2px solid var(--info-color, #17a2b8);
+                        border-radius: var(--border-radius);
+                        background: var(--bg-light);
+                        color: var(--text-primary);
+                        font-family: 'Press Start 2P', monospace;
+                        font-size: 8px;
+                        resize: vertical;
+                    ">${game.rules || ''}</textarea>
+                </div>
+                
+                <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 1rem;">
+                    <button type="button" onclick="saveGameEdits(${game.id})" style="
+                        background: var(--success-color);
+                        color: white;
+                        border: none;
+                        padding: 0.8rem 1.5rem;
+                        border-radius: var(--border-radius);
+                        font-family: 'Press Start 2P', monospace;
+                        font-size: 8px;
+                        cursor: pointer;
+                        transition: all 0.3s ease;
+                    ">
+                        💾 GUARDAR
+                    </button>
+                    
+                    <button type="button" onclick="closeEditGameModal()" style="
+                        background: var(--secondary-color);
+                        color: white;
+                        border: none;
+                        padding: 0.8rem 1.5rem;
+                        border-radius: var(--border-radius);
+                        font-family: 'Press Start 2P', monospace;
+                        font-size: 8px;
+                        cursor: pointer;
+                        transition: all 0.3s ease;
+                    ">
+                        ❌ CANCELAR
+                    </button>
+                </div>
+            </form>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+}
+
+function closeEditGameModal() {
+    const modal = document.getElementById('edit-game-modal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+function saveGameEdits(gameId) {
+    const game = games.find(g => g.id === gameId);
+    if (!game) return;
+    
+    const newName = document.getElementById('edit-game-name').value.trim();
+    const newEmoji = document.getElementById('edit-game-emoji').value;
+    const newRules = document.getElementById('edit-game-rules').value.trim();
+    
+    if (!newName) {
+        alert('El nombre del juego es obligatorio');
+        return;
+    }
+    
+    if (!newEmoji) {
+        alert('Debes seleccionar un emoji para el juego');
+        return;
+    }
+    
+    // Verificar que el nombre no esté en uso por otro juego
+    const existingGame = games.find(g => g.id !== gameId && g.name.toLowerCase() === newName.toLowerCase());
+    if (existingGame) {
+        alert('Ya existe otro juego con ese nombre');
+        return;
+    }
+    
+    // Actualizar datos
+    game.name = newName;
+    game.emoji = newEmoji;
+    game.rules = newRules || null;
+    
+    // Guardar cambios
+    localStorage.setItem('tournament-games', JSON.stringify(games));
+    
+    // Actualizar interfaz
+    loadGames();
+    
+    closeEditGameModal();
+    alert(`✅ Juego "${newName}" actualizado exitosamente!`);
 }
 
 function removeGame(gameId) {
@@ -2868,7 +3777,7 @@ function updateLeaderboard() {
         
         <div style="text-align: center; margin-top: 2rem; padding: 1rem; background: var(--bg-dark); border-radius: var(--border-radius);">
             <p style="font-size: 10px; opacity: 0.8; margin-bottom: 1rem;">
-                <strong>Sistema de puntos:</strong> 3 puntos por victoria, 1 punto por participacion
+                <strong>Sistema de puntos:</strong> 3 puntos por victoria únicamente
             </p>
             <button onclick="resetLeaderboard()" class="btn-secondary" style="font-size: 9px; padding: 0.5rem 1rem;">
                 Reiniciar Clasificacion
