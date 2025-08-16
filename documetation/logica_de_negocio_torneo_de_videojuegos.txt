@@ -1,0 +1,20 @@
+foto de los participantes en el certificado
+error solo agarró una sola partida en el torneo
+botón para comenzar torneo, reiniciar y finalizar, si se reinicia o se inicia, debe borrar la tabla de clasificaciones
+ponerle un margen a la barra de menus superior por que se corta el contenido prinicpal un poco
+
+
+aplicar el margen a la barra de menus superior tambien al chat por que se corta un poco
+en el bracket round el equipo que aparece de lado derecho se justifican a la izquierda, cambialo para que se justifiquen a la izquierda
+en el pulse se desacomodan las imagenes, deberían estar centradas con el texto que tienen inferior que son el nombre del equipo e integrantes
+modifica la logica para que todos los juegos registrados se jueguen y que se elijan de forma aleatoria su orden
+implementa que cuando un equipo o juego registrado se le de click a su imagen se pueda modificar, en el caso de los juegos que pueda elegir iconos con diseño similar a los que hay y tambien la opción para subir cualquier imagen
+implementa en los juegos, un modal como el de los equipos donde muestre detalles, por ende cuando se registre el juego abre un apartado de reglas
+
+el chat de lado derecho cuando está contraido el botón de mostrar el chat no aparece
+
+no se cargan las imagenes del equipo
+cuando se selecciona la opcion de cargar fotos individuales, no se cambia nada, sigue saliendo para cargar una sola foto
+registre 3 equipos y tanto en los brackets como en clasificación me dice que registre al menos 2 equipos
+continua el problema cuando el chat está contraido, sale una barra vertical, sin embargo no se ve el botón, posicionalo correctamente para que pueda verse y el usuario le pueda dar click
+

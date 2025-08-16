@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎂🎮 Inicio Rápido - Torneo de Cumpleaños de Luis 🏆🎉</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: #eee;
+            margin: 0;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(22, 33, 62, 0.8);
+            border: 4px solid #ff6b35;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+        h1 {
+            text-align: center;
+            color: #ffcc02;
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            text-shadow: 2px 2px 0px #ff6b35;
+        }
+        .option {
+            background: #1a1a2e;
+            border: 2px solid #f7931e;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .option:hover {
+            border-color: #ffcc02;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 204, 2, 0.3);
+        }
+        .option h3 {
+            color: #ffcc02;
+            margin-top: 0;
+        }
+        .option p {
+            margin-bottom: 1rem;
+            opacity: 0.9;
+        }
+        .btn {
+            background: #ff6b35;
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn:hover {
+            background: #ffcc02;
+            color: #333;
+            transform: translateY(-2px);
+        }
+        .btn-secondary {
+            background: #f7931e;
+        }
+        .instructions {
+            background: rgba(15, 52, 96, 0.5);
+            border-left: 4px solid #ffcc02;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+        .code {
+            background: #1a1a2e;
+            border: 1px solid #ff6b35;
+            border-radius: 4px;
+            padding: 0.5rem;
+            font-family: monospace;
+            color: #ffcc02;
+            margin: 0.5rem 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎂🎮 ¡CUMPLE-TORNEO DE LUIS! 🏆🎉</h1>
+        
+        <div class="option" onclick="startWithSampleData()">
+            <h3>🚀 Comenzar con Datos de Ejemplo</h3>
+            <p>Perfecto para probar la aplicación. Incluye 4 equipos, partidas jugadas y mensajes de chat.</p>
+            <button class="btn">Cargar Datos de Ejemplo</button>
+        </div>
+        
+        <div class="option" onclick="startFresh()">
+            <h3>✨ Comenzar desde Cero</h3>
+            <p>Ideal para tu torneo real. Empezarás con una aplicación limpia lista para registrar equipos.</p>
+            <button class="btn btn-secondary">Empezar Limpio</button>
+        </div>
+        
+        <div class="instructions">
+            <h3>📋 Instrucciones Rápidas:</h3>
+            <ol>
+                <li><strong>Registro:</strong> Los participantes pueden registrar sus equipos con fotos</li>
+                <li><strong>Brackets:</strong> Se generan automáticamente con 2+ equipos</li>
+                <li><strong>Partidas:</strong> Declara ganadores desde la sección Brackets</li>
+                <li><strong>Chat:</strong> Los participantes pueden chatear durante el evento</li>
+            </ol>
+        </div>
+        
+        <div class="instructions">
+            <h3>💡 Consejos para GitHub Pages:</h3>
+            <p>1. Sube todos los archivos a tu repositorio</p>
+            <p>2. Ve a Settings → Pages</p>
+            <p>3. Selecciona "Deploy from a branch" → "main"</p>
+            <p>4. ¡Tu torneo estará disponible en línea!</p>
+        </div>
+        
+        <div class="instructions">
+            <h3>🛠️ Funciones de Desarrollador:</h3>
+            <p>Abre la consola del navegador (F12) y usa:</p>
+            <div class="code">loadSampleData()</div>
+            <p>Para cargar datos de ejemplo en cualquier momento</p>
+            <div class="code">clearAllData()</div>
+            <p>Para limpiar todos los datos guardados</p>
+        </div>
+    </div>
+
+    <script>
+        function startWithSampleData() {
+            // Cargar datos de ejemplo
+            const sampleTeams = [
+                {
+                    id: 1690000001,
+                    name: "Los Campeones",
+                    players: ["Mario", "Luigi"],
+                    photoType: "team",
+                    photos: {},
+                    stats: { played: 2, won: 2, lost: 0, points: 6 },
+                    registrationDate: new Date().toISOString()
+                },
+                {
+                    id: 1690000002,
+                    name: "Fire Fighters",
+                    players: ["Ryu", "Ken"],
+                    photoType: "individual",
+                    photos: {},
+                    stats: { played: 2, won: 1, lost: 1, points: 4 },
+                    registrationDate: new Date().toISOString()
+                },
+                {
+                    id: 1690000003,
+                    name: "Speed Demons",
+                    players: ["Sonic", "Tails"],
+                    photoType: "team",
+                    photos: {},
+                    stats: { played: 2, won: 1, lost: 1, points: 4 },
+                    registrationDate: new Date().toISOString()
+                },
+                {
+                    id: 1690000004,
+                    name: "Pixel Warriors",
+                    players: ["Link", "Zelda"],
+                    photoType: "individual",
+                    photos: {},
+                    stats: { played: 2, won: 0, lost: 2, points: 2 },
+                    registrationDate: new Date().toISOString()
+                }
+            ];
+            
+            const sampleChat = [
+                {
+                    id: Date.now(),
+                    author: "Luis",
+                    message: "¡Bienvenidos a mi torneo de cumpleaños! 🎉",
+                    timestamp: new Date().toISOString()
+                },
+                {
+                    id: Date.now() + 1,
+                    author: "Mario",
+                    message: "¡Los Campeones están listos! 💪",
+                    timestamp: new Date().toISOString()
+                },
+                {
+                    id: Date.now() + 2,
+                    author: "Espectador",
+                    message: "¡Qué emocionante torneo! 🔥",
+                    timestamp: new Date().toISOString()
+                }
+            ];
+            
+            localStorage.setItem('tournament-teams', JSON.stringify(sampleTeams));
+            localStorage.setItem('tournament-chat', JSON.stringify(sampleChat));
+            
+            alert('✅ ¡Datos de ejemplo cargados! Serás redirigido a la aplicación.');
+            window.location.href = 'index.html';
+        }
+        
+        function startFresh() {
+            // Limpiar cualquier dato existente
+            localStorage.removeItem('tournament-teams');
+            localStorage.removeItem('tournament-matches');
+            localStorage.removeItem('tournament-chat');
+            
+            alert('✨ ¡Aplicación limpia lista! Serás redirigido para comenzar tu torneo.');
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>
