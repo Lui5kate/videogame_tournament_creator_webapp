@@ -63,6 +63,26 @@ class DoubleEliminationBracket {
         }
         
         console.log(`✅ Bracket generado: ${this.winnersBracket.length} rondas Winners, ${this.losersBracket.length} rondas Losers`);
+        
+        // Verificar auto-avances iniciales
+        this.processInitialAutoAdvances();
+    }
+    
+    // Procesar auto-avances que pueden ocurrir al inicio (equipos bye)
+    processInitialAutoAdvances() {
+        console.log('🔍 Verificando auto-avances iniciales...');
+        
+        // DESHABILITADO: No procesar auto-avances iniciales para evitar que bye llegue a Grand Finals
+        // Solo permitir auto-avances manuales después de que se completen matches reales
+        
+        console.log('⏸️ Auto-avances iniciales deshabilitados para mantener integridad del torneo');
+        
+        // Pero SÍ asignar juegos a matches que ya tienen ambos equipos
+        console.log('🎮 Asignando juegos a matches listos...');
+        const gamesAssigned = this.checkAndAssignGames();
+        if (gamesAssigned > 0) {
+            console.log(`✅ ${gamesAssigned} juegos asignados inicialmente`);
+        }
     }
     
     generateWinnersBracket(teamCount, rounds) {
@@ -80,18 +100,12 @@ class DoubleEliminationBracket {
                     team2: shuffledTeams[i + 1],
                     winner: null,
                     loser: null,
-                    game: this.getNextGame(),
+                    game: null, // No asignar juego hasta que ambos equipos estén presentes
                     completed: false,
                     nextMatchId: null,
                     loserNextMatchId: null
                 });
             }
-        }
-        
-        // Si hay número impar de equipos, el último pasa automáticamente
-        if (shuffledTeams.length % 2 !== 0) {
-            const byeTeam = shuffledTeams[shuffledTeams.length - 1];
-            console.log(`🎯 ${byeTeam.name} pasa automáticamente en Winners R1`);
         }
         
         this.winnersBracket.push(firstRoundMatches);
@@ -103,7 +117,6 @@ class DoubleEliminationBracket {
             const roundMatches = [];
             const previousRoundMatches = this.winnersBracket[round - 2];
             const teamsFromPreviousRound = previousRoundMatches.length;
-            const byeTeam = shuffledTeams.length % 2 !== 0 && round === 2 ? shuffledTeams[shuffledTeams.length - 1] : null;
             
             // Crear matches para ganadores de la ronda anterior
             for (let i = 0; i < teamsFromPreviousRound; i += 2) {
@@ -116,7 +129,7 @@ class DoubleEliminationBracket {
                         team2: null, // Se llenará con ganador de previousRoundMatches[i + 1]
                         winner: null,
                         loser: null,
-                        game: this.getNextGame(),
+                        game: null, // No asignar juego hasta que ambos equipos estén presentes
                         completed: false,
                         nextMatchId: null,
                         loserNextMatchId: null,
@@ -127,24 +140,32 @@ class DoubleEliminationBracket {
                     // Conectar matches anteriores con este match
                     previousRoundMatches[i].nextMatchId = match.id;
                     previousRoundMatches[i + 1].nextMatchId = match.id;
-                } else if (byeTeam && round === 2) {
-                    // El equipo bye se enfrenta al ganador del último match
+                }
+            }
+            
+            // Manejar equipo bye solo en la segunda ronda
+            if (round === 2 && shuffledTeams.length % 2 !== 0) {
+                const byeTeam = shuffledTeams[shuffledTeams.length - 1];
+                console.log(`🎯 ${byeTeam.name} tiene bye en Winners R1, esperará en Winners R2`);
+                
+                // Si hay un número impar de matches en la ronda anterior, el bye se enfrenta al último ganador
+                if (teamsFromPreviousRound % 2 !== 0) {
                     const match = {
                         id: this.matchIdCounter++,
                         bracket: 'winners',
                         round: round,
                         team1: byeTeam, // Equipo que pasó automáticamente
-                        team2: null, // Se llenará con ganador de previousRoundMatches[i]
+                        team2: null, // Se llenará con ganador del último match de la ronda anterior
                         winner: null,
                         loser: null,
-                        game: this.getNextGame(),
+                        game: null, // No asignar juego hasta que ambos equipos estén presentes
                         completed: false,
                         nextMatchId: null,
                         loserNextMatchId: null,
-                        dependsOn: [previousRoundMatches[i].id]
+                        dependsOn: [previousRoundMatches[previousRoundMatches.length - 1].id]
                     };
                     roundMatches.push(match);
-                    previousRoundMatches[i].nextMatchId = match.id;
+                    previousRoundMatches[previousRoundMatches.length - 1].nextMatchId = match.id;
                 }
             }
             
@@ -153,6 +174,8 @@ class DoubleEliminationBracket {
                 currentTeamsCount = Math.ceil(currentTeamsCount / 2);
             }
         }
+        
+        console.log(`✅ Winners Bracket: ${this.winnersBracket.length} rondas generadas`);
     }
     
     generateLosersBracket(winnersRounds) {
@@ -182,7 +205,7 @@ class DoubleEliminationBracket {
                         team2: null, // Perdedor de firstWinnersRound[i + 1]
                         winner: null,
                         loser: null,
-                        game: this.getNextGame(),
+                        game: null, // No asignar juego hasta que ambos equipos estén presentes
                         completed: false,
                         nextMatchId: null,
                         dependsOn: [firstWinnersRound[i].id, firstWinnersRound[i + 1].id],
@@ -206,7 +229,7 @@ class DoubleEliminationBracket {
                     team2: null, // Esperará al ganador de la siguiente ronda
                     winner: null,
                     loser: null,
-                    game: this.getNextGame(),
+                    game: null, // No asignar juego hasta que ambos equipos estén presentes
                     completed: false,
                     nextMatchId: null,
                     dependsOn: [firstWinnersRound[firstWinnersRound.length - 1].id],
@@ -246,7 +269,7 @@ class DoubleEliminationBracket {
                     team2: null, // Se llenará con el otro
                     winner: null,
                     loser: null,
-                    game: this.getNextGame(),
+                    game: null, // No asignar juego hasta que ambos equipos estén presentes
                     completed: false,
                     nextMatchId: null,
                     dependsOn: [],
@@ -287,7 +310,7 @@ class DoubleEliminationBracket {
                             team2: null,
                             winner: null,
                             loser: null,
-                            game: this.getNextGame(),
+                            game: null, // No asignar juego hasta que ambos equipos estén presentes
                             completed: false,
                             nextMatchId: null,
                             dependsOn: [currentLosersRound[i].id, currentLosersRound[i + 1].id],
@@ -320,7 +343,7 @@ class DoubleEliminationBracket {
             team2: null, // Se llenará with el ganador de Losers
             winner: null,
             loser: null,
-            game: this.getNextGame(),
+            game: null, // No asignar juego hasta que ambos equipos estén presentes
             completed: false,
             isGrandFinals: true,
             nextMatchId: null // Podría conectar a Grand Finals Reset
@@ -334,7 +357,7 @@ class DoubleEliminationBracket {
             team2: null, // Se llenará si es necesario
             winner: null,
             loser: null,
-            game: this.getNextGame(),
+            game: null, // No asignar juego hasta que ambos equipos estén presentes
             completed: false,
             isGrandFinalsReset: true,
             dependsOn: [this.grandFinals.id]
@@ -345,6 +368,52 @@ class DoubleEliminationBracket {
         
         console.log(`🏆 Grand Finals creado: Match ${this.grandFinals.id}`);
         console.log(`🔄 Grand Finals Reset creado: Match ${this.grandFinalsReset.id}`);
+    }
+    
+    // Asignar juego a un match cuando ambos equipos estén presentes
+    assignGameToMatch(match) {
+        if (!match.game && match.team1 && match.team2) {
+            console.log(`✅ Match ${match.id} listo para asignación de juego`);
+            try {
+                match.game = this.getNextGame();
+                console.log(`🎮 Juego asignado al match ${match.id}: ${match.game.name} ${match.game.emoji}`);
+                console.log(`   👥 ${match.team1.name} vs ${match.team2.name}`);
+                return true;
+            } catch (error) {
+                console.error(`❌ Error asignando juego al match ${match.id}:`, error);
+                return false;
+            }
+        } else if (!match.team1 || !match.team2) {
+            // Solo log si es necesario para debugging
+            // console.log(`⏳ Match ${match.id} esperando equipos: ${match.team1?.name || '❓'} vs ${match.team2?.name || '❓'}`);
+        } else if (match.game) {
+            // Solo log si es necesario para debugging
+            // console.log(`✅ Match ${match.id} ya tiene juego asignado: ${match.game.name}`);
+        }
+        return false;
+    }
+    
+    // Verificar y asignar juegos a matches que estén listos
+    checkAndAssignGames() {
+        const allMatches = this.getAllMatches();
+        let gamesAssigned = 0;
+        
+        console.log(`🔍 Verificando ${allMatches.length} matches para asignación de juegos...`);
+        
+        allMatches.forEach(match => {
+            if (this.assignGameToMatch(match)) {
+                gamesAssigned++;
+                console.log(`   ✅ Juego asignado al match ${match.id}: ${match.game.name} ${match.game.emoji}`);
+            }
+        });
+        
+        if (gamesAssigned > 0) {
+            console.log(`🎮 ${gamesAssigned} juegos asignados a matches listos`);
+        } else {
+            console.log(`ℹ️ No hay matches listos para asignación de juegos`);
+        }
+        
+        return gamesAssigned;
     }
     
     getNextGame() {
@@ -364,22 +433,28 @@ class DoubleEliminationBracket {
         
         this.winnersBracket.forEach((round, roundIndex) => {
             round.forEach(match => {
-                allMatches.push({...match, displayRound: 'W' + (roundIndex + 1)});
+                // Agregar displayRound directamente al objeto original, no crear copia
+                match.displayRound = 'W' + (roundIndex + 1);
+                allMatches.push(match);
             });
         });
         
         this.losersBracket.forEach((round, roundIndex) => {
             round.forEach(match => {
-                allMatches.push({...match, displayRound: 'L' + (roundIndex + 1)});
+                // Agregar displayRound directamente al objeto original, no crear copia
+                match.displayRound = 'L' + (roundIndex + 1);
+                allMatches.push(match);
             });
         });
         
         if (this.grandFinals) {
-            allMatches.push({...this.grandFinals, displayRound: 'GF'});
+            this.grandFinals.displayRound = 'GF';
+            allMatches.push(this.grandFinals);
         }
         
         if (this.grandFinalsReset) {
-            allMatches.push({...this.grandFinalsReset, displayRound: 'GF Reset'});
+            this.grandFinalsReset.displayRound = 'GF Reset';
+            allMatches.push(this.grandFinalsReset);
         }
         
         return allMatches;
@@ -490,6 +565,14 @@ class DoubleEliminationBracket {
                 } else {
                     console.warn(`   ⚠️ Match ${nextMatch.id} ya está lleno, no se puede avanzar ${completedMatch.winner.name}`);
                 }
+                
+                // Asignar juego si ambos equipos están presentes
+                if (this.assignGameToMatch(nextMatch)) {
+                    console.log(`   🎮 Juego asignado al match ${nextMatch.id}: ${nextMatch.game.name}`);
+                }
+                
+                // NO verificar auto-avance automático para evitar cascadas
+                // this.checkAutoAdvance(nextMatch);
             } else {
                 console.warn(`   ⚠️ No se encontró el match ${completedMatch.nextMatchId} para avanzar ${completedMatch.winner.name}`);
             }
@@ -499,8 +582,8 @@ class DoubleEliminationBracket {
         if (completedMatch.bracket === 'winners' && completedMatch.loserNextMatchId) {
             const loserMatch = this.findMatchById(completedMatch.loserNextMatchId);
             if (loserMatch) {
-                // Lógica especial para colocar perdedores en Losers Bracket
-                if (this.shouldPlaceInTeam1(loserMatch, completedMatch)) {
+                // Colocar perdedor en el slot correcto
+                if (!loserMatch.team1) {
                     loserMatch.team1 = completedMatch.loser;
                     console.log(`   ⬇️ ${completedMatch.loser.name} va al losers bracket como team1 al match ${loserMatch.id}`);
                 } else if (!loserMatch.team2) {
@@ -509,6 +592,14 @@ class DoubleEliminationBracket {
                 } else {
                     console.warn(`   ⚠️ Losers match ${loserMatch.id} ya está lleno, no se puede avanzar ${completedMatch.loser.name}`);
                 }
+                
+                // Asignar juego si ambos equipos están presentes
+                if (this.assignGameToMatch(loserMatch)) {
+                    console.log(`   🎮 Juego asignado al losers match ${loserMatch.id}: ${loserMatch.game.name}`);
+                }
+                
+                // NO verificar auto-avance automático para evitar cascadas
+                // this.checkAutoAdvance(loserMatch);
             } else {
                 console.warn(`   ⚠️ No se encontró el losers match ${completedMatch.loserNextMatchId} para ${completedMatch.loser.name}`);
             }
@@ -520,19 +611,97 @@ class DoubleEliminationBracket {
         this.checkTournamentCompletion();
     }
     
-    // Método auxiliar para determinar dónde colocar un perdedor en Losers Bracket
-    shouldPlaceInTeam1(loserMatch, completedMatch) {
-        // Si team1 está vacío, colocar ahí
-        if (!loserMatch.team1) return true;
+    // Verificar si un match puede avanzar automáticamente
+    checkAutoAdvance(match) {
+        if (match.completed) return;
         
-        // Si team1 ya está ocupado pero team2 está vacío, colocar en team2
-        if (loserMatch.team1 && !loserMatch.team2) return false;
+        // Si solo hay un equipo en el match, ese equipo avanza automáticamente
+        if (match.team1 && !match.team2) {
+            console.log(`🎯 Auto-avance: ${match.team1.name} pasa automáticamente en match ${match.id}`);
+            this.processAutoWin(match, match.team1.id);
+        } else if (!match.team1 && match.team2) {
+            console.log(`🎯 Auto-avance: ${match.team2.name} pasa automáticamente en match ${match.id}`);
+            this.processAutoWin(match, match.team2.id);
+        }
+    }
+    
+    // Procesar una victoria automática
+    processAutoWin(match, winnerId) {
+        const winner = match.team1?.id === winnerId ? match.team1 : match.team2;
+        const loser = null; // No hay perdedor en un auto-avance
         
-        // Si ambos están ocupados, hay un problema
-        return false;
+        match.winner = winner;
+        match.loser = loser;
+        match.completed = true;
+        match.completedAt = new Date().toISOString();
+        match.autoWin = true; // Marcar como victoria automática
+        
+        console.log(`✅ Auto-victoria procesada: ${winner.name} en match ${match.id}`);
+        
+        // Actualizar estadísticas (solo puntos de participación, no victoria completa)
+        this.updateTeamStats(winner, null, true);
+        
+        // Avanzar al siguiente match
+        if (match.nextMatchId) {
+            const nextMatch = this.findMatchById(match.nextMatchId);
+            if (nextMatch) {
+                if (!nextMatch.team1) {
+                    nextMatch.team1 = winner;
+                    console.log(`   ➡️ ${winner.name} auto-avanza como team1 al match ${nextMatch.id}`);
+                } else if (!nextMatch.team2) {
+                    nextMatch.team2 = winner;
+                    console.log(`   ➡️ ${winner.name} auto-avanza como team2 al match ${nextMatch.id}`);
+                }
+                
+                // NO verificar auto-avance en cascada para evitar que bye llegue hasta Grand Finals
+                // this.checkAutoAdvance(nextMatch);
+            }
+        }
+    }
+    
+    // Actualizar estadísticas de equipos (modificado para manejar auto-victorias)
+    updateTeamStats(winner, loser, isAutoWin = false) {
+        const winnerTeam = this.teams.find(t => t.id === winner.id);
+        
+        if (winnerTeam) {
+            winnerTeam.stats.played++;
+            if (isAutoWin) {
+                // Solo puntos de participación para auto-victorias
+                winnerTeam.stats.points += 1;
+                console.log(`📊 ${winner.name}: +1 punto (auto-avance)`);
+            } else {
+                // Victoria completa
+                winnerTeam.stats.won++;
+                winnerTeam.stats.points += 3;
+                console.log(`📊 ${winner.name}: +3 puntos (victoria)`);
+            }
+        }
+        
+        if (loser) {
+            const loserTeam = this.teams.find(t => t.id === loser.id);
+            if (loserTeam) {
+                loserTeam.stats.played++;
+                loserTeam.stats.lost++;
+                loserTeam.stats.points += 1; // Punto de participación
+                console.log(`📊 ${loser.name}: +1 punto (participación)`);
+            }
+        }
+        
+        // Guardar estadísticas actualizadas
+        localStorage.setItem('tournament-teams', JSON.stringify(this.teams));
     }
     
     checkTournamentCompletion() {
+        // Asignar juego a Grand Finals si ambos equipos están presentes
+        if (this.grandFinals && this.grandFinals.team1 && this.grandFinals.team2 && !this.grandFinals.game) {
+            this.assignGameToMatch(this.grandFinals);
+        }
+        
+        // Asignar juego a Grand Finals Reset si ambos equipos están presentes
+        if (this.grandFinalsReset && this.grandFinalsReset.team1 && this.grandFinalsReset.team2 && !this.grandFinalsReset.game) {
+            this.assignGameToMatch(this.grandFinalsReset);
+        }
+        
         // Verificar si Grand Finals está completado
         if (this.grandFinals && this.grandFinals.completed) {
             const grandFinalsWinner = this.grandFinals.winner;
@@ -557,6 +726,10 @@ class DoubleEliminationBracket {
                     // Configurar Grand Finals Reset
                     this.grandFinalsReset.team1 = winnersChampion;
                     this.grandFinalsReset.team2 = grandFinalsWinner;
+                    
+                    // Asignar juego inmediatamente
+                    this.assignGameToMatch(this.grandFinalsReset);
+                    
                     console.log(`🔄 Grand Finals Reset necesario: ${winnersChampion.name} vs ${grandFinalsWinner.name}`);
                     console.log(`   Razón: El equipo de Losers (${grandFinalsWinner.name}) ganó Grand Finals`);
                     return;
@@ -641,21 +814,35 @@ class DoubleEliminationBracket {
         return null;
     }
     
-    updateTeamStats(winner, loser) {
+    updateTeamStats(winner, loser, isAutoWin = false) {
         const winnerTeam = this.teams.find(t => t.id === winner.id);
-        const loserTeam = this.teams.find(t => t.id === loser.id);
         
         if (winnerTeam) {
             winnerTeam.stats.played++;
-            winnerTeam.stats.won++;
-            winnerTeam.stats.points += 3;
+            if (isAutoWin) {
+                // Solo puntos de participación para auto-victorias
+                winnerTeam.stats.points += 1;
+                console.log(`📊 ${winner.name}: +1 punto (auto-avance)`);
+            } else {
+                // Victoria completa
+                winnerTeam.stats.won++;
+                winnerTeam.stats.points += 3;
+                console.log(`📊 ${winner.name}: +3 puntos (victoria)`);
+            }
         }
         
-        if (loserTeam) {
-            loserTeam.stats.played++;
-            loserTeam.stats.lost++;
-            loserTeam.stats.points += 1;
+        if (loser) {
+            const loserTeam = this.teams.find(t => t.id === loser.id);
+            if (loserTeam) {
+                loserTeam.stats.played++;
+                loserTeam.stats.lost++;
+                loserTeam.stats.points += 1; // Punto de participación
+                console.log(`📊 ${loser.name}: +1 punto (participación)`);
+            }
         }
+        
+        // Guardar estadísticas actualizadas
+        localStorage.setItem('tournament-teams', JSON.stringify(this.teams));
     }
     
     getTournamentStatus() {
@@ -797,6 +984,21 @@ class BracketVisualizer {
             .team-slot.loser {
                 background: var(--danger-color);
                 color: white;
+                opacity: 0.7;
+            }
+            .team-slot.empty {
+                background: var(--bg-light);
+                opacity: 0.4;
+                font-style: italic;
+            }
+            .match-card.auto-win {
+                background: linear-gradient(135deg, var(--bg-medium) 0%, rgba(76, 175, 80, 0.2) 100%);
+                border: 2px solid var(--accent-color);
+                opacity: 0.9;
+            }
+            .match-card.auto-win .match-header {
+                background: rgba(76, 175, 80, 0.1);
+            }
                 opacity: 0.7;
             }
             .team-slot.empty {
@@ -1030,14 +1232,23 @@ class BracketVisualizer {
     
     renderMatch(match, displayRound) {
         const isAvailable = this.isMatchAvailable(match);
-        const cardClass = match.completed ? 'completed' : (isAvailable ? 'available' : '');
+        let cardClass = '';
+        
+        if (match.completed) {
+            cardClass = match.autoWin ? 'completed auto-win' : 'completed';
+        } else if (isAvailable) {
+            cardClass = 'available';
+        }
+        
+        // Determinar si se pueden mostrar los botones de ganador
+        const canShowWinnerButtons = !match.completed && match.team1 && match.team2 && match.game;
         
         return `
             <div class="match-card ${cardClass}" data-match-id="${match.id}">
                 <div class="match-header">
                     <span class="match-id">#${match.id}</span>
                     <div class="match-game">
-                        <span class="game-emoji">${match.game?.emoji || 'GAME'}</span>
+                        <span class="game-emoji">${match.game?.emoji || '🎮'}</span>
                         <span>${match.game?.name || 'TBD'}</span>
                     </div>
                 </div>
@@ -1047,7 +1258,7 @@ class BracketVisualizer {
                     ${this.renderTeamSlot(match.team2, match.winner, match.completed, 2)}
                 </div>
                 
-                ${!match.completed && isAvailable && match.team1 && match.team2 ? `
+                ${canShowWinnerButtons ? `
                     <div class="match-actions">
                         <button class="winner-btn" onclick="declareMatchWinner(${match.id}, ${match.team1.id})">
                             ${match.team1.name} Gana
@@ -1060,7 +1271,19 @@ class BracketVisualizer {
                 
                 ${match.completed ? `
                     <div style="text-align: center; margin-top: 0.5rem; font-size: 8px; color: var(--success-color);">
-                        Completado
+                        ${match.autoWin ? '🎯 Avance Automático' : '✅ Completado'}
+                    </div>
+                ` : ''}
+                
+                ${!match.completed && (!match.team1 || !match.team2) ? `
+                    <div style="text-align: center; margin-top: 0.5rem; font-size: 8px; color: var(--text-light);">
+                        ⏳ Esperando equipos
+                    </div>
+                ` : ''}
+                
+                ${!match.completed && match.team1 && match.team2 && !match.game ? `
+                    <div style="text-align: center; margin-top: 0.5rem; font-size: 8px; color: var(--accent-color);">
+                        🎮 Asignando juego...
                     </div>
                 ` : ''}
             </div>
@@ -1114,13 +1337,236 @@ function declareMatchWinner(matchId, winnerId) {
     if (currentBracket) {
         const success = currentBracket.processMatchResult(matchId, winnerId);
         if (success) {
-            if (bracketVisualizer) {
-                bracketVisualizer.update();
-            }
-            saveBracketToStorage();
-            updateTournamentInfo();
-            updateLeaderboard();
+            // Forzar actualización completa
+            forceUpdateVisualization();
+            
+            // Forzar actualización de la información del torneo para mostrar la nueva partida actual
+            setTimeout(() => {
+                updateTournamentInfo();
+                
+                // Buscar la siguiente partida disponible
+                const nextMatch = currentBracket.getNextAvailableMatch();
+                if (nextMatch) {
+                    const roundName = nextMatch.displayRound || `${nextMatch.bracket.toUpperCase()} R${nextMatch.round}`;
+                    console.log(`📍 Siguiente partida disponible: ${roundName} - Match #${nextMatch.id}`);
+                    console.log(`👥 ${nextMatch.team1?.name || '❓ Esperando'} vs ${nextMatch.team2?.name || '❓ Esperando'}`);
+                } else {
+                    console.log(`🏁 No hay más partidas disponibles - Torneo podría estar completado`);
+                }
+            }, 500);
         }
+    }
+}
+
+/**
+ * Función para forzar actualización completa de la visualización
+ */
+function forceUpdateVisualization() {
+    console.log('🔄 Forzando actualización completa de visualización...');
+    
+    if (!currentBracket) {
+        console.warn('⚠️ No hay bracket para actualizar');
+        return;
+    }
+    
+    // Guardar estado primero
+    saveBracketToStorage();
+    
+    // Limpiar y regenerar completamente la visualización
+    const bracketsContainer = document.getElementById('brackets');
+    if (bracketsContainer) {
+        // Limpiar contenido actual
+        bracketsContainer.innerHTML = '';
+        
+        // Recrear el visualizador
+        bracketVisualizer = new BracketVisualizer('brackets');
+        bracketVisualizer.render(currentBracket);
+        
+        // Agregar botones de control
+        const controlButtonsHtml = `
+            <div class="tournament-control-buttons" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; margin: 2rem 0; padding: 2rem; background: var(--bg-medium); border-radius: var(--border-radius);">
+                <h3 style="width: 100%; text-align: center; color: var(--accent-color); margin-bottom: 1rem;">Controles del Torneo</h3>
+                
+                <button onclick="processManualAutoAdvances()" 
+                        class="btn btn-info tournament-control-btn" 
+                        id="auto-advance-btn"
+                        style="background: var(--info-color, #17a2b8); color: white; border: none; padding: 0.8rem 1.5rem; border-radius: var(--border-radius); font-family: 'Press Start 2P', monospace; font-size: 10px; cursor: pointer; transition: all 0.3s ease; min-width: 140px;">
+                    🎯 AVANZAR ACTUAL
+                </button>
+
+                <button onclick="assignGamesManually()" 
+                        class="btn btn-secondary tournament-control-btn" 
+                        id="assign-games-btn"
+                        style="background: var(--secondary-color, #6c757d); color: white; border: none; padding: 0.8rem 1.5rem; border-radius: var(--border-radius); font-family: 'Press Start 2P', monospace; font-size: 10px; cursor: pointer; transition: all 0.3s ease; min-width: 140px;">
+                    🎮 ASIGNAR JUEGOS
+                </button>
+
+                <button onclick="resetTournament()" 
+                        class="btn btn-warning tournament-control-btn" 
+                        id="reset-tournament-btn"
+                        style="background: var(--warning-color, #ff9800); color: white; border: none; padding: 0.8rem 1.5rem; border-radius: var(--border-radius); font-family: 'Press Start 2P', monospace; font-size: 10px; cursor: pointer; transition: all 0.3s ease; min-width: 140px;">
+                    🔄 REINICIAR
+                </button>
+
+                <button onclick="emergencyReset()" 
+                        class="btn btn-danger tournament-control-btn" 
+                        id="emergency-btn"
+                        style="background: var(--danger-color, #f44336); color: white; border: none; padding: 0.8rem 1.5rem; border-radius: var(--border-radius); font-family: 'Press Start 2P', monospace; font-size: 10px; cursor: pointer; transition: all 0.3s ease; min-width: 140px;">
+                    🚨 EMERGENCIA
+                </button>
+            </div>
+        `;
+        
+        bracketsContainer.insertAdjacentHTML('beforeend', controlButtonsHtml);
+    }
+    
+    // Actualizar información del torneo
+    updateTournamentInfo();
+    updateLeaderboard();
+    
+    console.log('✅ Actualización completa finalizada');
+}
+
+/**
+ * Función para asignar juegos manualmente a matches que estén listos
+ */
+function assignGamesManually() {
+    if (!currentBracket) {
+        alert('⚠️ No hay torneo activo');
+        return;
+    }
+    
+    console.log('🎮 Asignación manual de juegos iniciada...');
+    
+    // Debug: Verificar estado antes de asignar
+    const allMatches = currentBracket.getAllMatches();
+    console.log('🔍 Estado ANTES de asignar juegos:');
+    allMatches.slice(0, 5).forEach(match => {
+        console.log(`   Match ${match.id}: game=${match.game ? match.game.name : 'NULL'}, team1=${match.team1?.name || 'NULL'}, team2=${match.team2?.name || 'NULL'}`);
+    });
+    
+    const gamesAssigned = currentBracket.checkAndAssignGames();
+    
+    // Debug: Verificar estado después de asignar
+    console.log('🔍 Estado DESPUÉS de asignar juegos:');
+    allMatches.slice(0, 5).forEach(match => {
+        console.log(`   Match ${match.id}: game=${match.game ? match.game.name : 'NULL'}, team1=${match.team1?.name || 'NULL'}, team2=${match.team2?.name || 'NULL'}`);
+    });
+    
+    if (gamesAssigned > 0) {
+        // Forzar actualización inmediata
+        forceUpdateVisualization();
+        
+        alert(`✅ ${gamesAssigned} juegos asignados\n\nLos matches con ambos equipos presentes ahora tienen juegos asignados.`);
+    } else {
+        alert('ℹ️ No hay matches listos para asignación\n\nTodos los matches ya tienen juegos asignados o están esperando equipos.');
+    }
+}
+
+/**
+ * Función para manejar auto-avance de la partida actual/próxima solamente
+ * Solo procesa la partida que se muestra como "próxima" en la información del torneo
+ */
+function processManualAutoAdvances() {
+    if (!currentBracket) {
+        alert('⚠️ No hay torneo activo');
+        return;
+    }
+    
+    // Buscar la próxima partida disponible (la que se muestra arriba)
+    const nextMatch = currentBracket.getNextAvailableMatch();
+    
+    if (!nextMatch) {
+        alert('ℹ️ No hay partidas disponibles para auto-avance\n\nTodas las partidas están completas o esperando resultados de otras partidas.');
+        return;
+    }
+    
+    // Verificar si la partida puede auto-avanzar
+    const canAutoAdvance = (nextMatch.team1 && !nextMatch.team2) || (!nextMatch.team1 && nextMatch.team2);
+    
+    if (!canAutoAdvance) {
+        const roundName = nextMatch.displayRound || `${nextMatch.bracket.toUpperCase()} R${nextMatch.round}`;
+        let statusMessage = '';
+        
+        if (nextMatch.team1 && nextMatch.team2) {
+            statusMessage = `Ambos equipos están presentes y deben jugar:\n` +
+                          `🔵 ${nextMatch.team1.name}\n` +
+                          `🔴 ${nextMatch.team2.name}\n\n` +
+                          `Usa los botones "X Gana" en el bracket para declarar el ganador.`;
+        } else if (!nextMatch.team1 && !nextMatch.team2) {
+            statusMessage = `Ambos equipos están pendientes.\n` +
+                          `Esta partida depende de que se completen otras partidas primero.\n\n` +
+                          `Completa las partidas anteriores para que los equipos avancen aquí.`;
+        }
+        
+        alert(`ℹ️ La partida actual no puede auto-avanzar\n\n` +
+              `📍 ${roundName}\n` +
+              `🎮 ${nextMatch.game?.name || 'Juego TBD'} ${nextMatch.game?.emoji || ''}\n` +
+              `🆔 Match #${nextMatch.id}\n\n` +
+              `${statusMessage}`);
+        return;
+    }
+    
+    const soloTeam = nextMatch.team1 || nextMatch.team2;
+    const roundName = nextMatch.displayRound || `${nextMatch.bracket.toUpperCase()} R${nextMatch.round}`;
+    
+    const confirmMessage = `🎯 AUTO-AVANCE DE PARTIDA ACTUAL\n\n` +
+        `📍 ${roundName}\n` +
+        `🎮 ${nextMatch.game?.name || 'Juego TBD'} ${nextMatch.game?.emoji || ''}\n` +
+        `🆔 Match #${nextMatch.id}\n\n` +
+        `👥 Situación actual:\n` +
+        `   ${nextMatch.team1?.name || '❓ Esperando equipo'}\n` +
+        `   VS\n` +
+        `   ${nextMatch.team2?.name || '❓ Esperando equipo'}\n\n` +
+        `✅ ${soloTeam.name} avanzará automáticamente\n` +
+        `   (no hay oponente disponible)\n\n` +
+        `¿Proceder con el auto-avance?`;
+    
+    if (confirm(confirmMessage)) {
+        console.log(`🎯 Procesando auto-avance manual para match ${nextMatch.id} (${roundName})`);
+        
+        // Procesar el auto-avance
+        currentBracket.checkAutoAdvance(nextMatch);
+        
+        // Actualizar visualización completa
+        if (bracketVisualizer) {
+            bracketVisualizer.update();
+        }
+        saveBracketToStorage();
+        updateTournamentInfo();
+        updateLeaderboard();
+        generateBrackets();
+        
+        // Buscar la siguiente partida disponible después del auto-avance
+        const newNextMatch = currentBracket.getNextAvailableMatch();
+        let nextMatchInfo = '';
+        
+        if (newNextMatch) {
+            const newRoundName = newNextMatch.displayRound || `${newNextMatch.bracket.toUpperCase()} R${newNextMatch.round}`;
+            nextMatchInfo = `\n\n📍 Siguiente partida disponible:\n` +
+                          `   ${newRoundName}\n` +
+                          `   🆔 Match #${newNextMatch.id}\n` +
+                          `   👥 ${newNextMatch.team1?.name || '❓ Esperando'} vs ${newNextMatch.team2?.name || '❓ Esperando'}`;
+        } else {
+            nextMatchInfo = `\n\n🏁 No hay más partidas disponibles.\n` +
+                          `   El torneo podría estar completado o esperando otros resultados.`;
+        }
+        
+        alert(`✅ Auto-avance completado\n\n` +
+              `🏆 ${soloTeam.name} avanzó automáticamente\n` +
+              `📍 Desde: ${roundName}\n` +
+              `🆔 Match #${nextMatch.id}` +
+              nextMatchInfo);
+        
+        // Forzar actualización de la información del torneo para mostrar la nueva partida actual
+        setTimeout(() => {
+            updateTournamentInfo();
+        }, 300);
+        
+        // Segunda actualización para asegurar sincronización completa
+        setTimeout(() => {
+            updateTournamentInfo();
+        }, 800);
     }
 }
 
@@ -1454,10 +1900,19 @@ function saveBracketToStorage() {
                 gameQueue: currentBracket.gameQueue,
                 usedGames: currentBracket.usedGames
             };
+            
+            // Debug: Verificar que los juegos se están guardando
+            console.log('💾 Guardando bracket en localStorage...');
+            const firstMatch = bracketData.winnersBracket[0]?.[0];
+            if (firstMatch) {
+                console.log(`   Primer match: game=${firstMatch.game ? firstMatch.game.name : 'NULL'}`);
+            }
+            
             localStorage.setItem('tournament-bracket', JSON.stringify(bracketData));
             localStorage.setItem('tournament-teams', JSON.stringify(teams));
+            console.log('✅ Bracket guardado en localStorage');
         } catch (error) {
-            console.error('Error guardando bracket:', error);
+            console.error('❌ Error guardando bracket:', error);
         }
     }
 }
@@ -1510,6 +1965,17 @@ function startTournament() {
             updateTournamentInfo();
             updateTournamentControls();
             generateBrackets();
+            
+            // Asignar juegos a matches que ya estén listos
+            setTimeout(() => {
+                const gamesAssigned = currentBracket.checkAndAssignGames();
+                if (gamesAssigned > 0) {
+                    console.log(`🔄 Actualizando visualización después de asignar ${gamesAssigned} juegos...`);
+                    // Forzar actualización completa
+                    forceUpdateVisualization();
+                    console.log(`✅ Visualización actualizada`);
+                }
+            }, 500);
             
             const actualMatches = currentBracket.getAllMatches().length;
             alert('Bracket de Doble Eliminacion Creado!\n\n' +
@@ -1801,9 +2267,27 @@ function generateBrackets() {
             <div style="text-align: center; padding: 2rem;">
                 <h3 style="color: var(--danger-color);">Error: Bracket no encontrado</h3>
                 <p>El bracket se perdio. Reinicia el torneo para crear uno nuevo.</p>
-                <button onclick="resetTournament()" style="margin-top: 1rem; padding: 0.5rem 1rem; background: var(--primary-color); color: white; border: none; border-radius: 4px; cursor: pointer;">
-                    Reiniciar Torneo
-                </button>
+                
+                <!-- BOTONES DE CONTROL DE EMERGENCIA -->
+                <div class="tournament-control-buttons" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; margin: 2rem 0; padding: 2rem; background: var(--bg-medium); border-radius: var(--border-radius);">
+                    <h3 style="width: 100%; text-align: center; color: var(--accent-color); margin-bottom: 1rem;">Controles de Emergencia</h3>
+                    
+                    <!-- Botón Reiniciar Torneo -->
+                    <button onclick="resetTournament()" 
+                            class="btn btn-warning tournament-control-btn" 
+                            id="reset-tournament-emergency-btn"
+                            style="background: var(--warning-color, #ff9800); color: white; border: none; padding: 0.8rem 1.5rem; border-radius: var(--border-radius); font-family: 'Press Start 2P', monospace; font-size: 10px; cursor: pointer; transition: all 0.3s ease; min-width: 140px;">
+                        🔄 REINICIAR
+                    </button>
+
+                    <!-- Botón de Emergencia -->
+                    <button onclick="emergencyReset()" 
+                            class="btn btn-danger tournament-control-btn" 
+                            id="emergency-error-btn"
+                            style="background: var(--danger-color, #f44336); color: white; border: none; padding: 0.8rem 1.5rem; border-radius: var(--border-radius); font-family: 'Press Start 2P', monospace; font-size: 10px; cursor: pointer; transition: all 0.3s ease; min-width: 140px;">
+                        🚨 EMERGENCIA
+                    </button>
+                </div>
             </div>
         `;
         return;
@@ -1815,6 +2299,95 @@ function generateBrackets() {
             bracketVisualizer = new BracketVisualizer('brackets');
         }
         bracketVisualizer.render(currentBracket);
+        
+        // Agregar botones de control después del bracket
+        const controlButtonsHtml = `
+            <div class="tournament-control-buttons" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; margin: 2rem 0; padding: 2rem; background: var(--bg-medium); border-radius: var(--border-radius);">
+                <h3 style="width: 100%; text-align: center; color: var(--accent-color); margin-bottom: 1rem;">Controles del Torneo</h3>
+                
+                <!-- Botón Comenzar/Nuevo Torneo -->
+                ${tournamentState === 'preparing' ? `
+                    <button onclick="startTournament()" 
+                            class="btn btn-success tournament-control-btn" 
+                            id="start-tournament-btn"
+                            style="background: var(--success-color, #4caf50); color: white; border: none; padding: 0.8rem 1.5rem; border-radius: var(--border-radius); font-family: 'Press Start 2P', monospace; font-size: 10px; cursor: pointer; transition: all 0.3s ease; min-width: 140px;"
+                            ${teams.length < 2 ? 'disabled' : ''}>
+                        🚀 COMENZAR
+                    </button>
+                ` : ''}
+                
+                ${tournamentState === 'finished' ? `
+                    <button onclick="startTournament()" 
+                            class="btn btn-success tournament-control-btn" 
+                            id="new-tournament-btn"
+                            style="background: var(--success-color, #4caf50); color: white; border: none; padding: 0.8rem 1.5rem; border-radius: var(--border-radius); font-family: 'Press Start 2P', monospace; font-size: 10px; cursor: pointer; transition: all 0.3s ease; min-width: 140px;"
+                            ${teams.length < 2 ? 'disabled' : ''}>
+                        🚀 NUEVO TORNEO
+                    </button>
+                ` : ''}
+
+                <!-- Botón Reiniciar Torneo -->
+                ${tournamentState === 'active' || tournamentState === 'finished' ? `
+                    <button onclick="resetTournament()" 
+                            class="btn btn-warning tournament-control-btn" 
+                            id="reset-tournament-btn"
+                            style="background: var(--warning-color, #ff9800); color: white; border: none; padding: 0.8rem 1.5rem; border-radius: var(--border-radius); font-family: 'Press Start 2P', monospace; font-size: 10px; cursor: pointer; transition: all 0.3s ease; min-width: 140px;">
+                        🔄 REINICIAR
+                    </button>
+                ` : ''}
+
+                <!-- Botón Finalizar Torneo -->
+                ${tournamentState === 'active' ? `
+                    <button onclick="finalizeTournament()" 
+                            class="btn btn-primary tournament-control-btn" 
+                            id="finalize-tournament-btn"
+                            style="background: var(--primary-color, #2196f3); color: white; border: none; padding: 0.8rem 1.5rem; border-radius: var(--border-radius); font-family: 'Press Start 2P', monospace; font-size: 10px; cursor: pointer; transition: all 0.3s ease; min-width: 140px;">
+                        🏆 FINALIZAR
+                    </button>
+                ` : ''}
+
+                <!-- Botón Auto-Avances -->
+                ${tournamentState === 'active' ? `
+                    <button onclick="processManualAutoAdvances()" 
+                            class="btn btn-info tournament-control-btn" 
+                            id="auto-advance-btn"
+                            style="background: var(--info-color, #17a2b8); color: white; border: none; padding: 0.8rem 1.5rem; border-radius: var(--border-radius); font-family: 'Press Start 2P', monospace; font-size: 10px; cursor: pointer; transition: all 0.3s ease; min-width: 140px;">
+                        🎯 AVANZAR ACTUAL
+                    </button>
+                ` : ''}
+
+                <!-- Botón Asignar Juegos -->
+                ${tournamentState === 'active' ? `
+                    <button onclick="assignGamesManually()" 
+                            class="btn btn-secondary tournament-control-btn" 
+                            id="assign-games-btn"
+                            style="background: var(--secondary-color, #6c757d); color: white; border: none; padding: 0.8rem 1.5rem; border-radius: var(--border-radius); font-family: 'Press Start 2P', monospace; font-size: 10px; cursor: pointer; transition: all 0.3s ease; min-width: 140px;">
+                        🎮 ASIGNAR JUEGOS
+                    </button>
+                ` : ''}
+
+                <!-- Botón Limpiar Datos -->
+                ${tournamentState === 'preparing' || tournamentState === 'finished' ? `
+                    <button onclick="clearAllData()" 
+                            class="btn btn-secondary tournament-control-btn" 
+                            id="clear-data-btn"
+                            style="background: var(--secondary-color, #6c757d); color: white; border: none; padding: 0.8rem 1.5rem; border-radius: var(--border-radius); font-family: 'Press Start 2P', monospace; font-size: 10px; cursor: pointer; transition: all 0.3s ease; min-width: 140px;">
+                        🧹 LIMPIAR DATOS
+                    </button>
+                ` : ''}
+
+                <!-- Botón de Emergencia - SIEMPRE VISIBLE -->
+                <button onclick="emergencyReset()" 
+                        class="btn btn-danger tournament-control-btn" 
+                        id="emergency-btn"
+                        style="background: var(--danger-color, #f44336); color: white; border: none; padding: 0.8rem 1.5rem; border-radius: var(--border-radius); font-family: 'Press Start 2P', monospace; font-size: 10px; cursor: pointer; transition: all 0.3s ease; min-width: 140px;">
+                    🚨 EMERGENCIA
+                </button>
+            </div>
+        `;
+        
+        // Agregar los botones al final del contenedor
+        container.insertAdjacentHTML('beforeend', controlButtonsHtml);
     }
 }
 // ===== INFORMACION DEL TORNEO =====
@@ -1866,14 +2439,48 @@ function updateTournamentInfo() {
     if (matchesPlayedEl) matchesPlayedEl.textContent = matchesPlayed;
     
     if (tournamentStatusEl) {
+        let nextMatchInfo = '';
+        
+        // Mostrar información de la próxima partida si el torneo está activo
+        if (tournamentState === 'active' && currentBracket) {
+            const nextMatch = currentBracket.getNextAvailableMatch();
+            if (nextMatch) {
+                const roundName = nextMatch.displayRound || `${nextMatch.bracket.toUpperCase()} R${nextMatch.round}`;
+                const gameInfo = nextMatch.game ? `${nextMatch.game.emoji} ${nextMatch.game.name}` : '🎮 TBD';
+                const team1Name = nextMatch.team1?.name || '❓ Esperando';
+                const team2Name = nextMatch.team2?.name || '❓ Esperando';
+                
+                nextMatchInfo = `
+                    <div style="margin-top: 0.8rem; padding: 0.8rem; background: var(--bg-light); border-radius: var(--border-radius); border-left: 4px solid var(--accent-color);">
+                        <div style="font-weight: bold; color: var(--accent-color); margin-bottom: 0.3rem;">📍 Próxima Partida:</div>
+                        <div style="font-size: 0.9rem; line-height: 1.4;">
+                            <div><strong>${roundName}</strong> - Match #${nextMatch.id}</div>
+                            <div>${gameInfo}</div>
+                            <div style="margin-top: 0.3rem;">
+                                <span style="color: var(--primary-color);">${team1Name}</span>
+                                <span style="margin: 0 0.5rem;">VS</span>
+                                <span style="color: var(--secondary-color);">${team2Name}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                nextMatchInfo = `
+                    <div style="margin-top: 0.8rem; padding: 0.8rem; background: var(--bg-light); border-radius: var(--border-radius); border-left: 4px solid var(--success-color);">
+                        <div style="font-weight: bold; color: var(--success-color);">🏁 No hay partidas disponibles</div>
+                        <div style="font-size: 0.9rem; margin-top: 0.3rem;">Todas las partidas están completas o esperando otros resultados</div>
+                    </div>
+                `;
+            }
+        }
+        
         tournamentStatusEl.innerHTML = `
             <div style="display: flex; flex-direction: column; gap: 0.5rem;">
                 <span>${status}</span>
                 ${tournamentState === 'preparing' && teams.length >= 2 ? `
-                    <div style="font-size: 8px; opacity: 0.7; background: rgba(255, 204, 2, 0.1); padding: 0.3rem; border-radius: 4px;">
-                        Sistema de doble eliminacion listo
-                    </div>
+                    <small style="color: var(--text-light);">Haz clic en "Comenzar" para generar el bracket</small>
                 ` : ''}
+                ${nextMatchInfo}
             </div>
         `;
     }
@@ -1881,118 +2488,68 @@ function updateTournamentInfo() {
 
 function updateTournamentControls() {
     // Buscar botones tanto en la parte superior como en la sección de brackets
-    const startBtn = document.getElementById('start-btn') || document.getElementById('start-tournament-btn');
-    const resetBtn = document.getElementById('reset-btn') || document.getElementById('reset-tournament-btn');
-    const finalizeBtn = document.getElementById('finalize-btn') || document.getElementById('finalize-tournament-btn');
-    const clearBtn = document.getElementById('clear-btn') || document.getElementById('clear-tournament-btn');
-    const emergencyBtn = document.getElementById('emergency-btn') || document.getElementById('emergency-tournament-btn');
+    const startBtn = document.getElementById('start-btn') || 
+                     document.getElementById('start-tournament-btn') || 
+                     document.getElementById('new-tournament-btn');
+    const resetBtn = document.getElementById('reset-btn') || 
+                     document.getElementById('reset-tournament-btn') || 
+                     document.getElementById('reset-tournament-emergency-btn');
+    const finalizeBtn = document.getElementById('finalize-btn') || 
+                        document.getElementById('finalize-tournament-btn');
+    const clearBtn = document.getElementById('clear-btn') || 
+                     document.getElementById('clear-data-btn');
+    const emergencyBtn = document.getElementById('emergency-btn') || 
+                         document.getElementById('emergency-tournament-btn') || 
+                         document.getElementById('emergency-finished-btn') || 
+                         document.getElementById('emergency-error-btn');
+    const autoAdvanceBtn = document.getElementById('auto-advance-btn');
     
     updateFormVisibility();
     
     console.log(`🎛️ Actualizando controles del torneo - Estado: ${tournamentState}`);
     
-    // Control de botones según estado del torneo
-    if (tournamentState === 'preparing') {
-        // Estado: Preparando torneo
-        if (startBtn) {
-            startBtn.style.display = 'inline-block';
-            startBtn.disabled = teams.length < 2;
-            startBtn.innerHTML = '🚀 Comenzar Torneo';
-            startBtn.className = 'btn btn-success';
-            console.log('✅ Botón Comenzar habilitado');
-        }
-        
-        if (resetBtn) {
-            resetBtn.style.display = 'none'; // No mostrar reiniciar si no hay torneo activo
-        }
-        
-        if (finalizeBtn) {
-            finalizeBtn.style.display = 'none'; // No mostrar finalizar si no hay torneo activo
-        }
-        
-        if (clearBtn) {
-            clearBtn.style.display = 'inline-block';
-            clearBtn.innerHTML = '🧹 Limpiar Datos';
-            clearBtn.className = 'btn btn-secondary';
-        }
-        
-        if (emergencyBtn) {
-            emergencyBtn.style.display = 'inline-block';
-            emergencyBtn.innerHTML = '🚨 Emergencia';
-            emergencyBtn.className = 'btn btn-danger';
-        }
-        
-    } else if (tournamentState === 'active') {
-        // Estado: Torneo activo
-        console.log('🏆 Torneo activo - Mostrando controles correspondientes');
-        
-        if (startBtn) {
-            startBtn.style.display = 'none'; // No mostrar comenzar si ya está activo
-        }
-        
-        if (resetBtn) {
-            resetBtn.style.display = 'inline-block';
-            resetBtn.innerHTML = '🔄 Reiniciar Torneo';
-            resetBtn.className = 'btn btn-warning';
-            console.log('✅ Botón Reiniciar visible');
-        }
-        
-        if (finalizeBtn) {
-            finalizeBtn.style.display = 'inline-block';
-            finalizeBtn.innerHTML = '🏆 Finalizar Torneo';
-            finalizeBtn.className = 'btn btn-primary';
-            console.log('✅ Botón Finalizar visible');
-        }
-        
-        if (clearBtn) {
-            clearBtn.style.display = 'none'; // No mostrar limpiar durante torneo activo
-        }
-        
-        if (emergencyBtn) {
-            emergencyBtn.style.display = 'inline-block';
-            emergencyBtn.innerHTML = '🚨 Emergencia';
-            emergencyBtn.className = 'btn btn-danger';
-            console.log('✅ Botón Emergencia visible');
-        }
-        
-    } else if (tournamentState === 'finished') {
-        // Estado: Torneo finalizado
-        if (startBtn) {
-            startBtn.style.display = 'inline-block';
-            startBtn.disabled = teams.length < 2;
-            startBtn.innerHTML = '🚀 Nuevo Torneo';
-            startBtn.className = 'btn btn-success';
-        }
-        
-        if (resetBtn) {
-            resetBtn.style.display = 'none';
-        }
-        
-        if (finalizeBtn) {
-            finalizeBtn.style.display = 'none';
-        }
-        
-        if (clearBtn) {
-            clearBtn.style.display = 'inline-block';
-            clearBtn.innerHTML = '🧹 Limpiar Todo';
-            clearBtn.className = 'btn btn-secondary';
-        }
-        
-        if (emergencyBtn) {
-            emergencyBtn.style.display = 'inline-block';
-            emergencyBtn.innerHTML = '🚨 Emergencia';
-            emergencyBtn.className = 'btn btn-danger';
-        }
+    // Los botones ahora se renderizan dinámicamente en generateBrackets()
+    // Esta función solo actualiza el estado si los botones ya existen
+    
+    if (startBtn) {
+        startBtn.disabled = teams.length < 2;
+        console.log('✅ Botón Comenzar/Nuevo encontrado y actualizado');
+    }
+    
+    if (resetBtn) {
+        console.log('✅ Botón Reiniciar encontrado');
+    }
+    
+    if (finalizeBtn) {
+        console.log('✅ Botón Finalizar encontrado');
+    }
+    
+    if (clearBtn) {
+        console.log('✅ Botón Limpiar encontrado');
+    }
+    
+    if (emergencyBtn) {
+        console.log('✅ Botón Emergencia encontrado');
+    }
+    
+    if (autoAdvanceBtn) {
+        console.log('✅ Botón Auto-Avance encontrado');
     }
     
     // Log para debugging
-    console.log('🎛️ Controles actualizados:', {
+    console.log('🎛️ Controles encontrados:', {
         startBtn: startBtn ? 'encontrado' : 'no encontrado',
         resetBtn: resetBtn ? 'encontrado' : 'no encontrado', 
         finalizeBtn: finalizeBtn ? 'encontrado' : 'no encontrado',
         clearBtn: clearBtn ? 'encontrado' : 'no encontrado',
-        emergencyBtn: emergencyBtn ? 'encontrado' : 'no encontrado'
+        emergencyBtn: emergencyBtn ? 'encontrado' : 'no encontrado',
+        autoAdvanceBtn: autoAdvanceBtn ? 'encontrado' : 'no encontrado'
     });
+    
+    // Forzar regeneración de brackets para asegurar que los botones aparezcan
+    setTimeout(() => {
+        generateBrackets();
+    }, 100);
 }
 
 function updateFormVisibility() {
